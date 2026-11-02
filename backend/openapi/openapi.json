@@ -5,5 +5,288 @@
     "description": "HTTP API for ContractReview.",
     "version": "1.0.0"
   },
-  "paths": { }
+  "paths": {
+    "/api/contracts": {
+      "post": {
+        "tags": [
+          "Contracts"
+        ],
+        "operationId": "UploadContract",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadContractForm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "headers": {
+              "Location": {
+                "description": "URL of the created resource.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractSummaryDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload Too Large",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Contracts"
+        ],
+        "operationId": "ListContracts",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ContractSummaryDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/contracts/{id}": {
+      "get": {
+        "tags": [
+          "Contracts"
+        ],
+        "operationId": "GetContract",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractDetailDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ContractDetailDto": {
+        "required": [
+          "id",
+          "title",
+          "fileName",
+          "sizeBytes",
+          "pageCount",
+          "uploadedAtUtc",
+          "extractedText"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "pageCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "uploadedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "extractedText": {
+            "type": "string"
+          }
+        }
+      },
+      "ContractSummaryDto": {
+        "required": [
+          "id",
+          "title",
+          "fileName",
+          "sizeBytes",
+          "pageCount",
+          "uploadedAtUtc"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "pageCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "uploadedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "IFormFile": {
+        "type": "string",
+        "format": "binary"
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "code": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "UploadContractForm": {
+        "required": [
+          "title",
+          "file"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "file": {
+            "$ref": "#/components/schemas/IFormFile"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Contracts"
+    }
+  ]
 }

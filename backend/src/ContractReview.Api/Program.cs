@@ -1,9 +1,15 @@
 using ContractReview.Api.Cors;
+using ContractReview.Api.Endpoints;
 using ContractReview.Api.ExceptionHandling;
 using ContractReview.Api.OpenApi;
 using ContractReview.Api.Options;
 using ContractReview.Api.Routes;
+using ContractReview.Api.Http;
 using ContractReview.Application;
+using ContractReview.Application.Options;
+using ContractReview.Domain.Errors;
+using ContractReview.Infrastructure;
+using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,10 +19,29 @@ builder.Services.AddOptions<FrontendCorsOptions>()
     .ValidateOnStart();
 builder.Services.AddOptions<SwaggerOptions>().BindConfiguration(SwaggerOptions.SectionName);
 
+builder.Services.AddOptions<UploadOptions>()
+    .BindConfiguration(UploadOptions.SectionName)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+var uploadOptions = builder.Configuration.GetSection(UploadOptions.SectionName).Get<UploadOptions>() ?? new UploadOptions();
+builder.WebHost.ConfigureKestrel(kestrel => kestrel.Limits.MaxRequestBodySize = uploadOptions.MaxRequestBytes);
+builder.Services.Configure<FormOptions>(form => form.MultipartBodyLengthLimit = uploadOptions.MaxRequestBytes);
+
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddValidation();
-builder.Services.AddProblemDetails();
+builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
+{
+    if (context.HttpContext.Response.StatusCode == StatusCodes.Status413PayloadTooLarge
+        && !context.ProblemDetails.Extensions.ContainsKey(ProblemExtensions.Code))
+    {
+        context.ProblemDetails.Detail = ErrorMessages.ContractFileTooLarge;
+        context.ProblemDetails.Extensions[ProblemExtensions.Code] = ErrorCodes.ContractFileTooLarge;
+    }
+});
 builder.Services.AddExceptionHandler<DomainExceptionHandler>();
+builder.Services.AddExceptionHandler<BadRequestExceptionHandler>();
 builder.Services.AddHealthChecks();
 builder.Services.AddOpenApi(ApiInfo.DocumentName, options =>
     options.AddDocumentTransformer((document, _, _) =>
@@ -25,7 +50,8 @@ builder.Services.AddOpenApi(ApiInfo.DocumentName, options =>
         document.Info.Version = ApiInfo.Version;
         document.Info.Description = ApiInfo.Description;
         return Task.CompletedTask;
-    }));
+    }).AddOperationTransformer(ContractOperationTransformer.TransformAsync)
+    .AddSchemaTransformer(ProblemDetailsSchemaTransformer.TransformAsync));
 
 var frontendOrigin = builder.Configuration
     .GetSection(FrontendCorsOptions.SectionName)
@@ -36,6 +62,7 @@ builder.Services.AddCors(options => options.AddPolicy(CorsPolicies.Frontend, pol
 var app = builder.Build();
 
 app.UseExceptionHandler();
+app.UseStatusCodePages();
 app.UseCors(CorsPolicies.Frontend);
 
 if (app.Configuration.GetSection(SwaggerOptions.SectionName).Get<SwaggerOptions>()?.Enabled == true)
@@ -49,6 +76,7 @@ if (app.Configuration.GetSection(SwaggerOptions.SectionName).Get<SwaggerOptions>
 }
 
 app.MapHealthChecks(ApiRoutes.Health);
+app.MapContractEndpoints();
 
 app.Run();
 

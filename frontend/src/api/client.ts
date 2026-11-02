@@ -1,5 +1,5 @@
 import createClient from "openapi-fetch";
 import { config } from "@/config";
+import type { paths } from "@/api/generated/schema";
 
-// Add the generated `paths` type as the generic once src/api/generated exists (npm run gen:api).
-export const apiClient = createClient({ baseUrl: config.apiUrl });
+export const apiClient = createClient<paths>({ baseUrl: config.apiUrl });

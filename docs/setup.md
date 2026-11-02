@@ -40,7 +40,9 @@ cp .env.example .env.local
 
 `.env.local` sets `NEXT_PUBLIC_API_URL`, which `.env.example` defaults to `http://localhost:5080`. The API's `http` profile listens on that URL. If you run the API on a different URL, set `NEXT_PUBLIC_API_URL` to match.
 
-A Debug build of the API creates and migrates the `ContractReview_Dev` LocalDB database. There are no migrations yet, so no database is created until the first data feature lands.
+A Debug build of the API creates and migrates the `ContractReview_Dev` LocalDB database. The first EF Core migration, `CreateContracts`, is applied automatically to LocalDB on each Debug build. LocalDB must be running (`sqllocaldb start MSSQLLocalDB`) for the build and the API to reach it.
+
+Upload size limit: `Upload:MaxFileBytes` (in `backend/src/ContractReview.Api/appsettings.json`) sets the maximum PDF size in bytes. The default is `10485760` (10 MB, D-012). Kestrel's request body limit is that value plus 1 MiB, so oversized requests can be rejected with 413 before the file is read. Override it with user-secrets or an environment variable (`Upload__MaxFileBytes`) if needed.
 
 ## Running the apps
 
@@ -58,7 +60,8 @@ The `https` profile (`backend/src/ContractReview.Api/Properties/launchSettings.j
 The `http` profile listens on `http://localhost:5080`, which matches the frontend default, so a plain `dotnet run --project src/ContractReview.Api` works with no extra flags.
 
 - Swagger UI: `https://localhost:7080/swagger` (Development only).
-- Health: `/health` on the API host, for example `https://localhost:7080/health`.
+- Health: `/health` on the API host, for example `https://localhost:7080/health`. It includes a database check, so LocalDB must be running or the endpoint reports unhealthy.
+- API reference: `docs/api.md`.
 
 Frontend, from `frontend/`:
 
@@ -99,4 +102,4 @@ npm run gen:api
 ## Notes
 
 - There is no authentication (decision D-003). Anyone who can reach the API can call it.
-- The database and EF Core migrations arrive with the first data feature. After that, local Debug builds apply pending migrations to LocalDB automatically.
+- EF Core migrations live in `backend/src/ContractReview.Infrastructure/Migrations`. Local Debug builds apply pending migrations to LocalDB automatically; CI and Release builds do not.

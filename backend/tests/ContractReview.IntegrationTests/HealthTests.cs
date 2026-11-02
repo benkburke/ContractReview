@@ -1,10 +1,10 @@
 using System.Net;
 using ContractReview.Api.Routes;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace ContractReview.IntegrationTests;
 
-public class HealthTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
+[Collection(ApiCollection.Name)]
+public class HealthTests(ApiFactory factory)
 {
     [Fact]
     public async Task Health_returns_ok()

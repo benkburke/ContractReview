@@ -18,7 +18,7 @@ export default defineConfig({
   use: { baseURL: WEB_URL },
   webServer: [
     {
-      command: `dotnet run --project ../backend/src/ContractReview.Api --urls ${API_URL} --property:ApplyMigrationsOnBuild=false`,
+      command: `node e2e/migrate.mjs && dotnet run --project ../backend/src/ContractReview.Api --urls ${API_URL} --property:ApplyMigrationsOnBuild=false`,
       url: `${API_URL}/health`,
       env: {
         ASPNETCORE_ENVIRONMENT: "Development",
