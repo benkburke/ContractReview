@@ -1,0 +1,30 @@
+<Project>
+  <!--
+    EF Core code first: apply pending migrations to the local LocalDB database after each build.
+    Imported by src/ContractReview.Api/ContractReview.Api.csproj:  <Import Project="..\..\build\Migrations.targets" />
+    The EF tools use AppDbContextFactory, which refuses any server other than (localdb) unless
+    EF_ALLOW_NON_LOCAL=1 is set, so this target can never migrate a shared or production database.
+    Runs only for Debug builds, outside CI, when ApplyMigrationsOnBuild is not false,
+    and once the Infrastructure project has a Migrations folder. verify.mjs and Playwright pass
+    ApplyMigrationsOnBuild=false because tests migrate their own databases.
+    The EF tool runs with its no-build option so it does not rebuild (and re-trigger) this project.
+  -->
+  <PropertyGroup>
+    <ApplyMigrationsOnBuild Condition="'$(ApplyMigrationsOnBuild)' == ''">true</ApplyMigrationsOnBuild>
+    <EfInfrastructureDir>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/../ContractReview.Infrastructure'))</EfInfrastructureDir>
+  </PropertyGroup>
+
+  <Target Name="ApplyEfMigrations"
+          AfterTargets="Build"
+          Condition="'$(ApplyMigrationsOnBuild)' == 'true'
+                     And '$(Configuration)' == 'Debug'
+                     And '$(CI)' != 'true'
+                     And '$(TF_BUILD)' != 'True'
+                     And '$(DesignTimeBuild)' != 'true'
+                     And Exists('$(EfInfrastructureDir)/Migrations')">
+    <Message Importance="high" Text="Applying EF Core migrations to the local LocalDB database..." />
+    <Exec Command="dotnet tool run dotnet-ef database update --no-build --configuration $(Configuration) --project &quot;$(EfInfrastructureDir)/ContractReview.Infrastructure.csproj&quot; --startup-project &quot;$(MSBuildProjectFullPath)&quot;"
+          WorkingDirectory="$(MSBuildProjectDirectory)"
+          EnvironmentVariables="ASPNETCORE_ENVIRONMENT=Development;DOTNET_ENVIRONMENT=Development" />
+  </Target>
+</Project>

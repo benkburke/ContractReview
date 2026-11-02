@@ -1,0 +1,12 @@
+CLAUDE.local.md
+.env*
+!.env.example
+.claude/settings.local.json
+**/appsettings.*.local.json
+bin/
+obj/
+node_modules/
+.next/
+playwright-report/
+test-results/
+.verify/
