@@ -2,14 +2,14 @@
 
 Recorded by the coordinator with `node scripts/decision.mjs`. Append-only: a changed decision gets a new entry that reverses the old one.
 
-## D-001 Time box for first demo
+## D-001 Time box for first demo (reversed by D-023)
 - Date: 2026-11-02
 - Options: 1 week | 2-4 weeks | none | 90 minutes
 - Choice: 90 minutes
 - Why: First demo must be ready within 90 minutes; thin path sized to fit
 - Who: You chose
 
-## D-002 Product scope
+## D-002 Product scope (reversed by D-015)
 - Date: 2026-11-02
 - Options: Upload + risk review | Reviewer workflow | Clause comparison
 - Choice: Upload + risk review: user uploads a contract, system extracts clauses and flags risks, reviewer approves or rejects
@@ -23,7 +23,7 @@ Recorded by the coordinator with `node scripts/decision.mjs`. Append-only: a cha
 - Why: Demo scope
 - Who: You chose
 
-## D-004 Realtime (SignalR)
+## D-004 Realtime (SignalR) (reversed by D-019)
 - Date: 2026-11-02
 - Options: No | Yes: review status | Yes: analysis progress | Yes: both
 - Choice: Yes: review status changes and analysis progress
@@ -51,7 +51,7 @@ Recorded by the coordinator with `node scripts/decision.mjs`. Append-only: a cha
 - Why: Single-language demo
 - Who: You chose
 
-## D-008 Integrations
+## D-008 Integrations (reversed by D-016)
 - Date: 2026-11-02
 - Options: None | File storage | LLM/doc parsing API | Email
 - Choice: None
@@ -66,7 +66,7 @@ Recorded by the coordinator with `node scripts/decision.mjs`. Append-only: a cha
 - Who: You overrode Claude's proposal
 - Source: specs/roadmap.md
 
-## D-010 Thin path order
+## D-010 Thin path order (reversed by D-024)
 - Date: 2026-11-02
 - Options: Upload -> Analyse -> Review | Merge upload and analyse
 - Choice: T1 Upload PDF -> T2 Analyse with live progress -> T3 Review decision with live status
@@ -105,3 +105,96 @@ Recorded by the coordinator with `node scripts/decision.mjs`. Append-only: a cha
 - Why: Spec matches the T1 roadmap scope
 - Who: You chose
 - Source: specs/upload-pdf-contract.md
+
+## D-015 Product scope
+- Date: 2026-11-02
+- Options: Upload + risk review with approve/reject | Warranty claim analysis: upload a warranty contract PDF, ask natural-language claims, LLM evaluates coverage
+- Choice: Warranty claim analysis per specs/challenge-update.md
+- Why: Stakeholder clarification: users ask whether an incident is covered by their warranty
+- Who: You chose
+- Reverses: D-002
+- Source: specs/challenge-update.md
+
+## D-016 LLM integration provider
+- Date: 2026-11-02
+- Options: None | OpenRouter | Anthropic direct | OpenAI direct | Azure OpenAI
+- Choice: OpenRouter (OpenAI-compatible API; model names in config; API key in user-secrets/env vars)
+- Why: Named in the challenge update; one key gives access to any model
+- Who: You chose
+- Reverses: D-008
+- Source: specs/challenge-update.md
+
+## D-017 How claims reach a contract
+- Date: 2026-11-02
+- Options: Upload once, ask many | Both with one-shot POST /api/claims/evaluate | One-shot only
+- Choice: Upload once, ask many: stored contracts (T1); POST /api/contracts/{id}/claims; claims and results stored
+- Why: Reuses T1 storage and avoids re-parsing the PDF per question
+- Who: You chose
+- Source: specs/challenge-update.md
+
+## D-018 Second-pass answer evaluator (challenge.md Phase 2)
+- Date: 2026-11-02
+- Options: Depth item | Thin path | Drop
+- Choice: In scope as a depth item
+- Why: Thin path ships the structured evaluation first
+- Who: You chose
+- Source: specs/challenge.md
+
+## D-019 Realtime usage
+- Date: 2026-11-02
+- Options: Drop SignalR | Progress over SignalR | Stream the answer
+- Choice: Keep SignalR for claim evaluation progress (e.g. retrieving, reasoning, done) pushed to the asking user
+- Why: Stakeholder chose live progress; old review-status use no longer applies
+- Who: You overrode Claude's proposal
+- Reverses: D-004
+- Source: specs/challenge-update.md
+
+## D-020 Customer coverage level for a claim
+- Date: 2026-11-02
+- Options: Pick per question | Set once per contract | LLM infers
+- Choice: LLM infers the coverage level from the contract; if it is blank, the user is asked to choose it
+- Why: Stakeholder wants inference with a fallback to asking
+- Who: You overrode Claude's proposal
+- Source: specs/challenge-update.md
+
+## D-021 State amendments in the contract
+- Date: 2026-11-02
+- Options: Defer to depth | Thin path state picker
+- Choice: Defer to depth; thin path judges against the base contract and notes state amendments may apply
+- Why: Keeps the thin path small
+- Who: Claude proposed; you accepted
+- Source: specs/challenge-update.md
+
+## D-022 Retrieval method for contract chunks
+- Date: 2026-11-02
+- Options: BM25 in-process | Embeddings via OpenRouter | Whole contract in prompt
+- Choice: Embeddings via OpenRouter; chunks and vectors stored in SQL Server, computed at upload
+- Why: Stakeholder preference for semantic search
+- Who: You overrode Claude's proposal
+- Source: specs/challenge-update.md
+
+## D-023 First demo time box
+- Date: 2026-11-02
+- Options: 90 minutes | 3 hours | Half a day | 1 day
+- Choice: Demo by 5pm Pacific today (2026-11-02)
+- Why: Stakeholder deadline after scope change
+- Who: You chose
+- Reverses: D-001
+- Source: specs/challenge-update.md
+
+## D-024 Revised roadmap order and cuts for warranty claim scope
+- Date: 2026-11-02
+- Options: Approve | Move T4 to depth | Changes
+- Choice: Approve: T2 chunks+embeddings, T3 claim evaluation+dashboard, T4 SignalR progress; evaluator, state amendments, history, eval set as depth; risk-review items dropped
+- Why: Matches challenge-update.md and the 5pm demo
+- Who: You chose
+- Reverses: D-010
+- Source: specs/roadmap.md
+
+## D-025 Approve revised docs/project.md
+- Date: 2026-11-02
+- Options: Approve | Changes
+- Choice: Approve
+- Why: Reflects D-015..D-023
+- Who: You chose
+- Source: docs/project.md
