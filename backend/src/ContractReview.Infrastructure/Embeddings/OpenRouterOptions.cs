@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using ContractReview.Domain.Claims;
 using ContractReview.Domain.Contracts;
 
 namespace ContractReview.Infrastructure.Embeddings;
@@ -8,6 +9,7 @@ public sealed class OpenRouterOptions
     public const string SectionName = "OpenRouter";
     public const string DefaultBaseUrl = "https://openrouter.ai/api/v1";
     public const string DefaultEmbeddingModel = "openai/text-embedding-3-small";
+    public const string DefaultChatModel = "openai/gpt-4o-mini";
     public const int DefaultTimeoutSeconds = 30;
     public const int DefaultMaxRetries = 2;
     public const int DefaultRetryDelayMilliseconds = 1000;
@@ -19,6 +21,11 @@ public sealed class OpenRouterOptions
     [Required]
     [MaxLength(ContractRules.MaxEmbeddingModelLength)]
     public string EmbeddingModel { get; init; } = DefaultEmbeddingModel;
+
+    /// <summary>The chat model that evaluates claims (D-031).</summary>
+    [Required]
+    [MaxLength(ClaimRules.MaxModelLength)]
+    public string ChatModel { get; init; } = DefaultChatModel;
 
     /// <summary>From user-secrets or the <c>OpenRouter__ApiKey</c> env var only. Missing: indexing fails, the app still starts.</summary>
     public string? ApiKey { get; init; }

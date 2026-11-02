@@ -20,3 +20,7 @@ Callers: `UploadContract` (after saving the contract, so a failure still returns
 ## Status
 
 `NotIndexed` (default for existing contracts after migration) → `Indexing` → `Indexed` or `Failed`. Only `Indexed` contracts have `sections`.
+
+## Claim evaluation
+
+Spec: `specs/evaluate-claim.md`. The claim pipeline reads the stored chunks: the claim text (plus the coverage level, when given) is embedded with `IEmbeddingClient`; `IClaimRetriever` ranks every chunk of the contract by cosine similarity in-process and keeps the top `Claims:TopK`, dropping the lowest-ranked chunks to fit `Claims:MaxContextChars`; `IChatCompletionClient` (`OpenRouterChatClient`, or `FakeChatClient` when `Llm:Provider` is `Fake`) sends a strict system prompt with the chunks labelled `[C1]..[CK]` and a JSON schema response format at temperature 0. The reply is validated against the schema and output limits; a decisive answer (`Covered`, `NotCovered`, `Conditional`) without a valid citation is downgraded to `InsufficientInformation` (D-032). Only the claim and its result are stored (`Claims` table, `ResultJson` for the list fields); on failure the claim is stored as `Failed` with its error code (D-033) and no result.

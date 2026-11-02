@@ -7,6 +7,12 @@ export const errorCodes = {
   notFound: "contract.not_found",
   indexingInProgress: "contract.indexing_in_progress",
   embeddingFailed: "contract.embedding_failed",
+  claimTextInvalid: "claim.text_invalid",
+  claimCoverageLevelInvalid: "claim.coverage_level_invalid",
+  claimNotFound: "claim.not_found",
+  claimEvaluationFailed: "claim.evaluation_failed",
+  notIndexed: "contract.not_indexed",
+  embeddingModelMismatch: "contract.embedding_model_mismatch",
 } as const;
 
 export const httpStatus = {

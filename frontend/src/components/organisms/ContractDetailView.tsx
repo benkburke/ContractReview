@@ -10,10 +10,12 @@ import { apiClient } from "@/api/client";
 import type { components } from "@/api/generated/schema";
 import { isNotFound, readProblem } from "@/api/problem";
 import { AppLink } from "@/components/atoms/AppLink";
+import { AskClaimForm } from "@/components/organisms/AskClaimForm";
 import { IndexingPanel } from "@/components/organisms/IndexingPanel";
 import { ContractMeta } from "@/components/molecules/ContractMeta";
 import { routes } from "@/constants/routes";
 import { testIds } from "@/constants/testIds";
+import { claimStrings } from "@/strings/claims";
 import { contractErrorStrings, contractStrings } from "@/strings/contracts";
 
 type Detail = components["schemas"]["ContractDetailDto"];
@@ -33,7 +35,12 @@ export function ContractDetailView({ id }: { id: string }) {
       .then(({ data, error, response }) => {
         if (!active) return;
         if (data) setState({ status: "ready", contract: data });
-        else setState(isNotFound(readProblem(error, response.status)) ? { status: "notFound" } : { status: "error" });
+        else
+          setState(
+            isNotFound(readProblem(error, response.status))
+              ? { status: "notFound" }
+              : { status: "error" },
+          );
       })
       .catch(() => {
         if (active) setState({ status: "error" });
@@ -51,7 +58,11 @@ export function ContractDetailView({ id }: { id: string }) {
 
   if (state.status === "loading") {
     return (
-      <div role="status" aria-label={contractStrings.detailLoading} data-testid={testIds.contractDetailLoading}>
+      <div
+        role="status"
+        aria-label={contractStrings.detailLoading}
+        data-testid={testIds.contractDetailLoading}
+      >
         <Skeleton variant="rectangular" height={240} />
       </div>
     );
@@ -70,7 +81,11 @@ export function ContractDetailView({ id }: { id: string }) {
   if (state.status === "error") {
     return (
       <Box>
-        <Alert severity="error" sx={{ mb: 2 }} data-testid={testIds.contractDetailError}>
+        <Alert
+          severity="error"
+          sx={{ mb: 2 }}
+          data-testid={testIds.contractDetailError}
+        >
           {contractErrorStrings.loadDetail}
         </Alert>
         {back(testIds.contractDetailBack)}
@@ -81,11 +96,32 @@ export function ContractDetailView({ id }: { id: string }) {
   return (
     <Box>
       <Box sx={{ mb: 2 }}>{back(testIds.contractDetailBack)}</Box>
-      <Typography variant="h4" component="h1" gutterBottom data-testid={testIds.contractDetailTitle}>
+      <Typography
+        variant="h4"
+        component="h1"
+        gutterBottom
+        data-testid={testIds.contractDetailTitle}
+      >
         {contract.title}
       </Typography>
       <ContractMeta contract={contract} />
-      <IndexingPanel contract={contract} onIndexed={(updated) => setState({ status: "ready", contract: updated })} />
+      <IndexingPanel
+        contract={contract}
+        onIndexed={(updated) =>
+          setState({ status: "ready", contract: updated })
+        }
+      />
+      {contract.indexStatus === "Indexed" ? (
+        <AskClaimForm contractId={contract.id} />
+      ) : (
+        <Alert
+          severity="info"
+          sx={{ mt: 3 }}
+          data-testid={testIds.claimNotIndexed}
+        >
+          {claimStrings.notIndexed}
+        </Alert>
+      )}
       <Typography variant="h6" component="h2" sx={{ mt: 3, mb: 1 }}>
         {contractStrings.extractedText}
       </Typography>
@@ -96,7 +132,13 @@ export function ContractDetailView({ id }: { id: string }) {
         tabIndex={0}
         aria-label={contractStrings.extractedTextLabel}
         data-testid={testIds.contractDetailText}
-        sx={{ p: 2, maxHeight: "60vh", overflow: "auto", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
+        sx={{
+          p: 2,
+          maxHeight: "60vh",
+          overflow: "auto",
+          whiteSpace: "pre-wrap",
+          overflowWrap: "anywhere",
+        }}
       >
         {contract.extractedText}
       </Paper>

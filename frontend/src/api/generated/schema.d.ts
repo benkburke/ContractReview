@@ -52,10 +52,77 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/contracts/{id}/claims": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["EvaluateClaim"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/contracts/{id}/claims/{claimId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetClaim"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ClaimCitationDto: {
+            sectionHeading: string;
+            excerpt: string;
+        };
+        ClaimEvaluationDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            contractId: string;
+            claimText: string;
+            coverageLevelRequested: null | string;
+            state: components["schemas"]["ClaimState"];
+            /** Format: date-time */
+            createdAtUtc: string;
+            result: null | components["schemas"]["ClaimEvaluationResultDto"];
+            errorCode: null | string;
+        };
+        ClaimEvaluationResultDto: {
+            status: components["schemas"]["ClaimStatus"];
+            /** Format: int32 */
+            confidence: number | string;
+            coverageLevel: null | string;
+            needsCoverageLevel: boolean;
+            coverageLevelOptions: string[];
+            coveredItems: string[];
+            excludedItems: string[];
+            reasoning: string;
+            followUpQuestion: null | string;
+            citations: components["schemas"]["ClaimCitationDto"][];
+            model: string;
+        };
+        /** @enum {unknown} */
+        ClaimState: "Evaluated" | "Failed";
+        /** @enum {unknown} */
+        ClaimStatus: "Covered" | "NotCovered" | "Conditional" | "InsufficientInformation";
         ContractDetailDto: {
             /** Format: uuid */
             id: string;
@@ -90,6 +157,10 @@ export interface components {
             /** Format: date-time */
             uploadedAtUtc: string;
             indexStatus: components["schemas"]["IndexStatus"];
+        };
+        EvaluateClaimRequest: {
+            claimText: string;
+            coverageLevel?: null | string;
         };
         /** Format: binary */
         IFormFile: string;
@@ -252,6 +323,102 @@ export interface operations {
             };
             /** @description Bad Gateway */
             502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    EvaluateClaim: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvaluateClaimRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    /** @description URL of the created resource. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimEvaluationDto"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetClaim: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                claimId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimEvaluationDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -1,4 +1,5 @@
 using ContractReview.Application.Abstractions.Messaging;
+using ContractReview.Application.Features.Claims.Retrieval;
 using ContractReview.Application.Features.Contracts.Indexing;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -22,6 +23,7 @@ public static class DependencyInjection
         }
 
         services.AddSingleton<IContractChunker, ContractChunker>();
+        services.AddSingleton<IClaimRetriever, ClaimRetriever>();
         return services;
     }
 }

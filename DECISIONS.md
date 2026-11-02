@@ -238,3 +238,35 @@ Recorded by the coordinator with `node scripts/decision.mjs`. Append-only: a cha
 - Why: Needed for atomic chunk replacement (AC7)
 - Who: Claude proposed; you accepted
 - Source: specs/contract-chunks-embeddings.md
+
+## D-031 Default chat model for claim evaluation
+- Date: 2026-11-02
+- Options: openai/gpt-4o-mini | openai/gpt-4o
+- Choice: openai/gpt-4o-mini, configurable via OpenRouter:ChatModel
+- Why: Cheap and supports strict JSON schema output
+- Who: Claude proposed; you accepted
+- Source: specs/evaluate-claim.md
+
+## D-032 Decisive LLM answer with no valid citation
+- Date: 2026-11-02
+- Options: Downgrade to InsufficientInformation | Keep status and flag
+- Choice: Downgrade to InsufficientInformation
+- Why: Strict adherence to the contract text
+- Who: Claude proposed; you accepted
+- Source: specs/evaluate-claim.md
+
+## D-033 Store failed claim evaluations
+- Date: 2026-11-02
+- Options: Store with state Failed and error code | Store successes only
+- Choice: Store with state Failed and error code
+- Why: Lifecycle for T4 progress and a debug trail
+- Who: Claude proposed; you accepted
+- Source: specs/evaluate-claim.md
+
+## D-034 Where the sample Allstate PDF lives for the demo check
+- Date: 2026-11-02
+- Options: User uploads it manually | Git-ignored samples/ folder
+- Choice: Git-ignored samples/ folder
+- Why: Available locally for the demo check without committing it
+- Who: You chose
+- Source: specs/evaluate-claim.md

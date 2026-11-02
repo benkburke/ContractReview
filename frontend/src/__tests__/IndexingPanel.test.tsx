@@ -12,7 +12,10 @@ vi.mock("@/api/client", () => ({ apiClient: { POST: post } }));
 
 type Detail = components["schemas"]["ContractDetailDto"];
 
-function detail(indexStatus: Detail["indexStatus"], sections: Detail["sections"] = []): Detail {
+function detail(
+  indexStatus: Detail["indexStatus"],
+  sections: Detail["sections"] = [],
+): Detail {
   return {
     id: "11111111-1111-4111-8111-111111111111",
     title: "T",
@@ -38,7 +41,9 @@ describe("IndexingPanel", () => {
   it("shows the Indexed chip and the sections without a retry button", () => {
     render(<IndexingPanel contract={indexed} onIndexed={vi.fn()} />);
 
-    expect(screen.getByTestId(testIds.indexStatusChip)).toHaveTextContent(indexStrings.status.Indexed);
+    expect(screen.getByTestId(testIds.indexStatusChip)).toHaveTextContent(
+      indexStrings.status.Indexed,
+    );
     expect(screen.getAllByTestId(testIds.indexSectionItem)).toHaveLength(2);
     expect(screen.queryByTestId(testIds.indexRetry)).not.toBeInTheDocument();
   });
@@ -46,9 +51,15 @@ describe("IndexingPanel", () => {
   it("shows the failed message and retry button for a Failed contract", () => {
     render(<IndexingPanel contract={detail("Failed")} onIndexed={vi.fn()} />);
 
-    expect(screen.getByTestId(testIds.indexStatusChip)).toHaveTextContent(indexStrings.status.Failed);
-    expect(screen.getByTestId(testIds.indexMessage)).toHaveTextContent(indexStrings.failedMessage);
-    expect(screen.getByTestId(testIds.indexRetry)).toHaveTextContent(indexStrings.retry);
+    expect(screen.getByTestId(testIds.indexStatusChip)).toHaveTextContent(
+      indexStrings.status.Failed,
+    );
+    expect(screen.getByTestId(testIds.indexMessage)).toHaveTextContent(
+      indexStrings.failedMessage,
+    );
+    expect(screen.getByTestId(testIds.indexRetry)).toHaveTextContent(
+      indexStrings.retry,
+    );
   });
 
   it("calls onIndexed and announces success when the retry succeeds", async () => {
@@ -59,8 +70,12 @@ describe("IndexingPanel", () => {
     await userEvent.click(screen.getByTestId(testIds.indexRetry));
 
     await waitFor(() => expect(onIndexed).toHaveBeenCalledWith(indexed));
-    expect(screen.getByTestId(testIds.indexRetrySuccess)).toHaveTextContent(indexStrings.retrySuccess);
-    expect(screen.queryByTestId(testIds.indexRetryError)).not.toBeInTheDocument();
+    expect(screen.getByTestId(testIds.indexRetrySuccess)).toHaveTextContent(
+      indexStrings.retrySuccess,
+    );
+    expect(
+      screen.queryByTestId(testIds.indexRetryError),
+    ).not.toBeInTheDocument();
   });
 
   it("shows the embedding error in an alert when the retry fails", async () => {
@@ -85,11 +100,15 @@ describe("IndexingPanel", () => {
       error: { code: errorCodes.indexingInProgress, status: 409 },
       response: { status: 409 },
     });
-    render(<IndexingPanel contract={detail("NotIndexed")} onIndexed={vi.fn()} />);
+    render(
+      <IndexingPanel contract={detail("NotIndexed")} onIndexed={vi.fn()} />,
+    );
 
     await userEvent.click(screen.getByTestId(testIds.indexRetry));
 
-    expect(await screen.findByTestId(testIds.indexRetryError)).toHaveTextContent(indexStrings.inProgress);
+    expect(
+      await screen.findByTestId(testIds.indexRetryError),
+    ).toHaveTextContent(indexStrings.inProgress);
   });
 
   it("disables the button and sets aria-busy while the request runs", async () => {
@@ -103,6 +122,8 @@ describe("IndexingPanel", () => {
     expect(button).toBeDisabled();
     expect(button).toHaveAttribute("aria-busy", "true");
     resolve({ data: indexed, response: { status: 200 } });
-    await waitFor(() => expect(screen.getByTestId(testIds.indexRetry)).toBeEnabled());
+    await waitFor(() =>
+      expect(screen.getByTestId(testIds.indexRetry)).toBeEnabled(),
+    );
   });
 });

@@ -4,12 +4,20 @@ import Skeleton from "@mui/material/Skeleton";
 import { ContractDetailTemplate } from "@/components/templates/ContractDetailTemplate";
 import { contractStrings } from "@/strings/contracts";
 
-async function ContractDetailContent({ params }: { params: Promise<{ id: string }> }) {
+async function ContractDetailContent({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
   return <ContractDetailTemplate id={id} />;
 }
 
-export default function ContractDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ContractDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   return (
     <Suspense
       fallback={

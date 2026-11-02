@@ -9,14 +9,20 @@ public static class ContractOperationTransformer
 {
     public static Task TransformAsync(OpenApiOperation operation, OpenApiOperationTransformerContext context, CancellationToken cancellationToken)
     {
-        if (context.Description.ActionDescriptor.EndpointMetadata
+        var names = context.Description.ActionDescriptor.EndpointMetadata
             .OfType<EndpointNameMetadata>()
-            .All(m => m.EndpointName != ContractEndpoints.UploadContractName))
+            .Select(m => m.EndpointName)
+            .ToList();
+        var isUpload = names.Contains(ContractEndpoints.UploadContractName);
+        if (!isUpload && !names.Contains(ContractEndpoints.EvaluateClaimName))
         {
             return Task.CompletedTask;
         }
 
-        operation.RequestBody?.Content?.Remove(HeaderNames.FormUrlEncoded);
+        if (isUpload)
+        {
+            operation.RequestBody?.Content?.Remove(HeaderNames.FormUrlEncoded);
+        }
 
         if (operation.Responses?.TryGetValue(StatusCodes.Status201Created.ToString(), out var created) == true
             && created is OpenApiResponse response)

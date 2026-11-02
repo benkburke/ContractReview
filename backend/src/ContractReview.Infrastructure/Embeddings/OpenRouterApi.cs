@@ -5,6 +5,7 @@ public static class OpenRouterApi
 {
     /// <summary>Relative to <see cref="OpenRouterOptions.BaseUrl"/>.</summary>
     public const string EmbeddingsPath = "embeddings";
+    public const string ChatCompletionsPath = "chat/completions";
     public const string BearerScheme = "Bearer";
     public const string EncodingFormatFloat = "float";
     public const char PathSeparator = '/';

@@ -4,7 +4,12 @@ import { testIds } from "@/constants/testIds";
 import { indexStrings } from "@/strings/contracts";
 
 type Status = components["schemas"]["IndexStatus"];
-const colors = { Indexed: "success", NotIndexed: "default", Indexing: "info", Failed: "error" } as const;
+const colors = {
+  Indexed: "success",
+  NotIndexed: "default",
+  Indexing: "info",
+  Failed: "error",
+} as const;
 
 export function IndexStatusChip({ status }: { status: Status }) {
   return (

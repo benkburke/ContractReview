@@ -69,6 +69,28 @@ Indexing settings, all in `backend/src/ContractReview.Api/appsettings.json` unle
 
 Settings can also be overridden with environment variables using `__` for nesting, for example `Embeddings__Provider=Fake`. Options are validated at startup.
 
+### Claim evaluation
+
+A claim is evaluated by an OpenRouter chat model after its contract is indexed (D-016, D-031). The API key is the same `OpenRouter:ApiKey` user-secret used for embeddings; set it as shown above and never put it in `appsettings.json` or `.env.local`. Without a key, claim evaluation returns 502 `claim.evaluation_failed`.
+
+Claim settings, all in `backend/src/ContractReview.Api/appsettings.json` unless noted:
+
+| Key | Default | Notes |
+|-----|---------|-------|
+| `OpenRouter:ChatModel` | `openai/gpt-4o-mini` | Chat model for claim evaluation (D-031). |
+| `Llm:Provider` | `OpenRouter` | `Fake` selects a deterministic local chat client with no network call. Tests, CI and e2e use it (D-028). Do not set it for normal development. |
+| `Claims:TopK` | `8` | Chunks retrieved per claim, range 1 to 20. |
+| `Claims:MaxContextChars` | `12000` | Prompt budget for retrieved chunks, range 1,000 to 50,000. Lowest-ranked chunks are dropped to fit. |
+| `Claims:ChatTimeoutSeconds` | `60` | Timeout per chat request, range 5 to 300. |
+
+Manual demo check (optional): place the sample Allstate VSC PDF in the git-ignored `samples/` folder at the repository root, for example `samples/allstate-vsc.pdf`. Create the folder if it does not exist:
+
+```powershell
+New-Item -ItemType Directory -Force samples
+```
+
+Do not commit the PDF. Upload it through the app, wait for `Indexed`, then ask "My air conditioner is broken. Is it covered?" and "I have a flat tire".
+
 ## Running the apps
 
 Backend API, from `backend/`:

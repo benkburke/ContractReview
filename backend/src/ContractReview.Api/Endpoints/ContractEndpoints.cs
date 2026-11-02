@@ -1,6 +1,9 @@
 using ContractReview.Api.Http;
 using ContractReview.Api.Routes;
 using ContractReview.Application.Abstractions.Messaging;
+using ContractReview.Application.Features.Claims;
+using ContractReview.Application.Features.Claims.Commands.EvaluateClaim;
+using ContractReview.Application.Features.Claims.Queries.GetClaim;
 using ContractReview.Application.Features.Contracts;
 using ContractReview.Application.Features.Contracts.Commands.IndexContract;
 using ContractReview.Application.Features.Contracts.Commands.UploadContract;
@@ -18,6 +21,8 @@ public static class ContractEndpoints
     public const string ListContractsName = "ListContracts";
     public const string GetContractName = "GetContract";
     public const string IndexContractName = "IndexContract";
+    public const string EvaluateClaimName = "EvaluateClaim";
+    public const string GetClaimName = "GetClaim";
 
     public static IEndpointRouteBuilder MapContractEndpoints(this IEndpointRouteBuilder app)
     {
@@ -40,6 +45,17 @@ public static class ContractEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status502BadGateway);
+
+        group.MapPost(ApiRoutes.ContractClaims, EvaluateClaimAsync)
+            .WithName(EvaluateClaimName)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status502BadGateway);
+
+        group.MapGet(ApiRoutes.ContractClaimById, GetClaimAsync)
+            .WithName(GetClaimName)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         return app;
     }
@@ -98,6 +114,37 @@ public static class ContractEndpoints
             Detail = ErrorMessages.ContractNotFound,
         };
         problem.Extensions[ProblemExtensions.Code] = ErrorCodes.ContractNotFound;
+        return TypedResults.Problem(problem);
+    }
+
+    private static async Task<Results<CreatedAtRoute<ClaimEvaluationDto>, ProblemHttpResult>> EvaluateClaimAsync(
+        Guid id,
+        EvaluateClaimRequest request,
+        ICommandHandler<EvaluateClaimCommand, ClaimEvaluationDto?> handler,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(
+            new EvaluateClaimCommand(id, request.ClaimText, request.CoverageLevel),
+            cancellationToken);
+        if (result is not null)
+        {
+            return TypedResults.CreatedAtRoute(result, GetClaimName, new { id, claimId = result.Id });
+        }
+
+        return NotFoundProblem(ErrorMessages.ContractNotFound, ErrorCodes.ContractNotFound);
+    }
+
+    private static async Task<Ok<ClaimEvaluationDto>> GetClaimAsync(
+        Guid id,
+        Guid claimId,
+        IQueryHandler<GetClaimQuery, ClaimEvaluationDto> handler,
+        CancellationToken cancellationToken) =>
+        TypedResults.Ok(await handler.HandleAsync(new GetClaimQuery(id, claimId), cancellationToken));
+
+    private static ProblemHttpResult NotFoundProblem(string detail, string code)
+    {
+        var problem = new ProblemDetails { Status = StatusCodes.Status404NotFound, Detail = detail };
+        problem.Extensions[ProblemExtensions.Code] = code;
         return TypedResults.Problem(problem);
     }
 

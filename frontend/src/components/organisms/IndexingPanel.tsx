@@ -43,7 +43,11 @@ export function IndexingPanel({ contract, onIndexed }: Props) {
     setError(null);
     setSuccess(false);
     try {
-      const { data, error: problem, response } = await apiClient.POST("/api/contracts/{id}/index", {
+      const {
+        data,
+        error: problem,
+        response,
+      } = await apiClient.POST("/api/contracts/{id}/index", {
         params: { path: { id: contract.id } },
       });
       if (data) {
@@ -70,7 +74,9 @@ export function IndexingPanel({ contract, onIndexed }: Props) {
         </Typography>
         <IndexStatusChip status={status} />
       </Box>
-      {status === "Indexed" && <SectionList sections={contract.sections} labelledBy={headingId} />}
+      {status === "Indexed" && (
+        <SectionList sections={contract.sections} labelledBy={headingId} />
+      )}
       {message && (
         <Typography sx={{ my: 1 }} data-testid={testIds.indexMessage}>
           {message}
@@ -82,7 +88,11 @@ export function IndexingPanel({ contract, onIndexed }: Props) {
           onClick={retry}
           disabled={busy}
           aria-busy={busy}
-          startIcon={busy ? <CircularProgress size={16} color="inherit" aria-hidden /> : undefined}
+          startIcon={
+            busy ? (
+              <CircularProgress size={16} color="inherit" aria-hidden />
+            ) : undefined
+          }
           data-testid={testIds.indexRetry}
         >
           {busy ? indexStrings.retrying : indexStrings.retry}
@@ -92,7 +102,12 @@ export function IndexingPanel({ contract, onIndexed }: Props) {
         {success ? indexStrings.retrySuccess : null}
       </div>
       {error && (
-        <Alert severity="error" role="alert" sx={{ mt: 1 }} data-testid={testIds.indexRetryError}>
+        <Alert
+          severity="error"
+          role="alert"
+          sx={{ mt: 1 }}
+          data-testid={testIds.indexRetryError}
+        >
           {error}
         </Alert>
       )}

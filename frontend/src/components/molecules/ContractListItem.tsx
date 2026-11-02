@@ -20,7 +20,10 @@ export function ContractListItem({ contract }: Props) {
     <ListItem divider data-testid={testIds.contractItem}>
       <ListItemText
         primary={
-          <AppLink href={routes.contractDetail(contract.id)} data-testid={testIds.contractItemLink}>
+          <AppLink
+            href={routes.contractDetail(contract.id)}
+            data-testid={testIds.contractItemLink}
+          >
             {contract.title}
           </AppLink>
         }

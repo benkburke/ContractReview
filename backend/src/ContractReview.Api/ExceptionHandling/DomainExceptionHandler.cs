@@ -15,9 +15,12 @@ public sealed class DomainExceptionHandler(IProblemDetailsService problemDetails
             return false;
         }
 
-        var status = domain.Kind == DomainErrorKind.Conflict
-            ? StatusCodes.Status409Conflict
-            : StatusCodes.Status400BadRequest;
+        var status = domain.Kind switch
+        {
+            DomainErrorKind.Conflict => StatusCodes.Status409Conflict,
+            DomainErrorKind.NotFound => StatusCodes.Status404NotFound,
+            _ => StatusCodes.Status400BadRequest,
+        };
         httpContext.Response.StatusCode = status;
 
         var problem = new ProblemDetails { Status = status, Detail = domain.Message };

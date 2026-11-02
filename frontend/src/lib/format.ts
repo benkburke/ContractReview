@@ -3,7 +3,10 @@ import { displayFormat } from "@/constants/upload";
 export function formatBytes(value: number | string): string {
   let size = Number(value);
   let unit = 0;
-  while (size >= displayFormat.byteStep && unit < displayFormat.byteUnits.length - 1) {
+  while (
+    size >= displayFormat.byteStep &&
+    unit < displayFormat.byteUnits.length - 1
+  ) {
     size /= displayFormat.byteStep;
     unit += 1;
   }

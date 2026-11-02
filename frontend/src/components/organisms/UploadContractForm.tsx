@@ -14,11 +14,19 @@ import { mapUploadProblem, readProblem } from "@/api/problem";
 import { FieldError } from "@/components/molecules/FieldError";
 import { routes } from "@/constants/routes";
 import { testIds } from "@/constants/testIds";
-import { uploadFieldIds, uploadFormFields, uploadLimits } from "@/constants/upload";
+import {
+  uploadFieldIds,
+  uploadFormFields,
+  uploadLimits,
+} from "@/constants/upload";
 import { validateFile, validateTitle } from "@/lib/uploadValidation";
 import { contractErrorStrings, contractStrings } from "@/strings/contracts";
 
-type Errors = { title: string | null; file: string | null; form: string | null };
+type Errors = {
+  title: string | null;
+  file: string | null;
+  form: string | null;
+};
 const noErrors: Errors = { title: null, file: null, form: null };
 
 export function UploadContractForm() {
@@ -31,7 +39,11 @@ export function UploadContractForm() {
   async function onSubmit(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
-    const next: Errors = { title: validateTitle(title), file: validateFile(file), form: null };
+    const next: Errors = {
+      title: validateTitle(title),
+      file: validateFile(file),
+      form: null,
+    };
     setErrors(next);
     if (next.title || next.file || !file) return;
 
@@ -80,10 +92,17 @@ export function UploadContractForm() {
         disabled={busy}
         error={Boolean(errors.title)}
         slotProps={{
-          htmlInput: { "aria-describedby": titleDescribedBy, "data-testid": testIds.uploadTitleInput },
+          htmlInput: {
+            "aria-describedby": titleDescribedBy,
+            "data-testid": testIds.uploadTitleInput,
+          },
         }}
       />
-      <FieldError id={uploadFieldIds.titleError} message={errors.title} testId={testIds.uploadTitleError} />
+      <FieldError
+        id={uploadFieldIds.titleError}
+        message={errors.title}
+        testId={testIds.uploadTitleError}
+      />
 
       <FormControl error={Boolean(errors.file)}>
         <FormLabel htmlFor={uploadFieldIds.file} required>
@@ -102,15 +121,31 @@ export function UploadContractForm() {
         />
         <FormHelperText>{contractStrings.fileHelp}</FormHelperText>
       </FormControl>
-      <FieldError id={uploadFieldIds.fileError} message={errors.file} testId={testIds.uploadFileError} />
-      <FieldError id={uploadFieldIds.formError} message={errors.form} testId={testIds.uploadFormError} />
+      <FieldError
+        id={uploadFieldIds.fileError}
+        message={errors.file}
+        testId={testIds.uploadFileError}
+      />
+      <FieldError
+        id={uploadFieldIds.formError}
+        message={errors.form}
+        testId={testIds.uploadFormError}
+      />
 
       <Button
         type="submit"
         variant="contained"
         disabled={busy}
         aria-busy={busy}
-        startIcon={busy ? <CircularProgress size={16} color="inherit" aria-label={contractStrings.submitting} /> : undefined}
+        startIcon={
+          busy ? (
+            <CircularProgress
+              size={16}
+              color="inherit"
+              aria-label={contractStrings.submitting}
+            />
+          ) : undefined
+        }
         data-testid={testIds.uploadSubmit}
         sx={{ alignSelf: "flex-start" }}
       >

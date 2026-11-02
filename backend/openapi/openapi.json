@@ -186,10 +186,307 @@
           }
         }
       }
+    },
+    "/api/contracts/{id}/claims": {
+      "post": {
+        "tags": [
+          "Contracts"
+        ],
+        "operationId": "EvaluateClaim",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvaluateClaimRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "headers": {
+              "Location": {
+                "description": "URL of the created resource.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimEvaluationDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Bad Gateway",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/contracts/{id}/claims/{claimId}": {
+      "get": {
+        "tags": [
+          "Contracts"
+        ],
+        "operationId": "GetClaim",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "claimId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimEvaluationDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "ClaimCitationDto": {
+        "required": [
+          "sectionHeading",
+          "excerpt"
+        ],
+        "type": "object",
+        "properties": {
+          "sectionHeading": {
+            "type": "string"
+          },
+          "excerpt": {
+            "type": "string"
+          }
+        }
+      },
+      "ClaimEvaluationDto": {
+        "required": [
+          "id",
+          "contractId",
+          "claimText",
+          "coverageLevelRequested",
+          "state",
+          "createdAtUtc",
+          "result",
+          "errorCode"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "contractId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "claimText": {
+            "type": "string"
+          },
+          "coverageLevelRequested": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "state": {
+            "$ref": "#/components/schemas/ClaimState"
+          },
+          "createdAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "result": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ClaimEvaluationResultDto"
+              }
+            ]
+          },
+          "errorCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ClaimEvaluationResultDto": {
+        "required": [
+          "status",
+          "confidence",
+          "coverageLevel",
+          "needsCoverageLevel",
+          "coverageLevelOptions",
+          "coveredItems",
+          "excludedItems",
+          "reasoning",
+          "followUpQuestion",
+          "citations",
+          "model"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/ClaimStatus"
+          },
+          "confidence": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "coverageLevel": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "needsCoverageLevel": {
+            "type": "boolean"
+          },
+          "coverageLevelOptions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "coveredItems": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "excludedItems": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reasoning": {
+            "type": "string"
+          },
+          "followUpQuestion": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "citations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClaimCitationDto"
+            }
+          },
+          "model": {
+            "type": "string"
+          }
+        }
+      },
+      "ClaimState": {
+        "enum": [
+          "Evaluated",
+          "Failed"
+        ]
+      },
+      "ClaimStatus": {
+        "enum": [
+          "Covered",
+          "NotCovered",
+          "Conditional",
+          "InsufficientInformation"
+        ]
+      },
       "ContractDetailDto": {
         "required": [
           "id",
@@ -321,6 +618,23 @@
           },
           "indexStatus": {
             "$ref": "#/components/schemas/IndexStatus"
+          }
+        }
+      },
+      "EvaluateClaimRequest": {
+        "required": [
+          "claimText"
+        ],
+        "type": "object",
+        "properties": {
+          "claimText": {
+            "type": "string"
+          },
+          "coverageLevel": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

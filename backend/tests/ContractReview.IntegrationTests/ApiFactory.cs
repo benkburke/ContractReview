@@ -18,11 +18,12 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
     }
 
-    // Fake embedder so tests never call OpenRouter (D-028); no startup backfill racing the migration or the tests.
+    // Fake embedder and chat client so tests never call OpenRouter (D-028); no startup backfill racing the migration or the tests.
     protected override void ConfigureWebHost(IWebHostBuilder builder) =>
         builder
             .UseSetting("ConnectionStrings:AppDb", connectionString)
             .UseSetting("Embeddings:Provider", "Fake")
+            .UseSetting("Llm:Provider", "Fake")
             .UseSetting("Indexing:BackfillOnStartup", "false");
 
     private bool databaseDropped;

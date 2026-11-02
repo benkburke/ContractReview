@@ -40,7 +40,8 @@ export const indexStrings = {
   retrying: "Indexing…",
   retrySuccess: "Indexing finished.",
   inProgress: "Indexing is already in progress. Please wait a moment.",
-  embeddingFailed: "The embedding service could not index this contract. Please try again later.",
+  embeddingFailed:
+    "The embedding service could not index this contract. Please try again later.",
 } as const;
 
 export const contractErrorStrings = {
@@ -49,7 +50,8 @@ export const contractErrorStrings = {
   fileRequired: "Choose a PDF file.",
   fileNotPdf: "The file must be a PDF.",
   fileTooLarge: "The file is too large. The limit is 10 MB.",
-  noText: "This PDF has no readable text. Scanned or image-only PDFs are not supported.",
+  noText:
+    "This PDF has no readable text. Scanned or image-only PDFs are not supported.",
   pdfUnreadable: "The PDF could not be read. It may be corrupt or encrypted.",
   generic: "Something went wrong. Please try again.",
   network: "Could not reach the server. Please try again.",

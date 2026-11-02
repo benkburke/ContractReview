@@ -11,7 +11,10 @@ describe("mapUploadProblem", () => {
     [errorCodes.pdfUnreadable, "file", contractErrorStrings.pdfUnreadable],
     [errorCodes.titleInvalid, "title", contractErrorStrings.titleRequired],
   ])("maps %s to the %s field", (code, field, message) => {
-    expect(mapUploadProblem(readProblem({ code }, 400))).toEqual({ field, message });
+    expect(mapUploadProblem(readProblem({ code }, 400))).toEqual({
+      field,
+      message,
+    });
   });
 
   it("maps 413 to the too-large message on the file field", () => {
@@ -22,7 +25,9 @@ describe("mapUploadProblem", () => {
   });
 
   it("falls back to a form-level error", () => {
-    expect(mapUploadProblem(readProblem({ code: "x" }, 500)).field).toBe("form");
+    expect(mapUploadProblem(readProblem({ code: "x" }, 500)).field).toBe(
+      "form",
+    );
   });
 });
 

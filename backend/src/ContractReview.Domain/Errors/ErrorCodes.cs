@@ -13,4 +13,10 @@ public static class ErrorCodes
     public const string ContractIndexingInProgress = "contract.indexing_in_progress";
     public const string ContractEmbeddingFailed = "contract.embedding_failed";
     public const string ContractTooManyChunks = "contract.too_many_chunks";
+    public const string ContractNotIndexed = "contract.not_indexed";
+    public const string ContractEmbeddingModelMismatch = "contract.embedding_model_mismatch";
+    public const string ClaimTextInvalid = "claim.text_invalid";
+    public const string ClaimCoverageLevelInvalid = "claim.coverage_level_invalid";
+    public const string ClaimNotFound = "claim.not_found";
+    public const string ClaimEvaluationFailed = "claim.evaluation_failed";
 }

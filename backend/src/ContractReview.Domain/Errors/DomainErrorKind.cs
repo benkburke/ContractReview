@@ -4,4 +4,5 @@ public enum DomainErrorKind
 {
     Validation,
     Conflict,
+    NotFound,
 }

@@ -12,7 +12,10 @@ import { testIds } from "@/constants/testIds";
 import { contractErrorStrings, contractStrings } from "@/strings/contracts";
 
 type Contracts = components["schemas"]["ContractSummaryDto"][];
-type State = { status: "loading" } | { status: "error" } | { status: "ready"; items: Contracts };
+type State =
+  | { status: "loading" }
+  | { status: "error" }
+  | { status: "ready"; items: Contracts };
 
 export function ContractList() {
   const [state, setState] = useState<State>({ status: "loading" });
@@ -22,7 +25,10 @@ export function ContractList() {
     apiClient
       .GET("/api/contracts")
       .then(({ data }) => {
-        if (active) setState(data ? { status: "ready", items: data } : { status: "error" });
+        if (active)
+          setState(
+            data ? { status: "ready", items: data } : { status: "error" },
+          );
       })
       .catch(() => {
         if (active) setState({ status: "error" });
@@ -34,7 +40,11 @@ export function ContractList() {
 
   if (state.status === "loading") {
     return (
-      <div role="status" aria-label={contractStrings.listLoading} data-testid={testIds.contractsLoading}>
+      <div
+        role="status"
+        aria-label={contractStrings.listLoading}
+        data-testid={testIds.contractsLoading}
+      >
         <Skeleton variant="rectangular" height={120} />
       </div>
     );
@@ -47,10 +57,17 @@ export function ContractList() {
     );
   }
   if (state.items.length === 0) {
-    return <Typography data-testid={testIds.contractsEmpty}>{contractStrings.empty}</Typography>;
+    return (
+      <Typography data-testid={testIds.contractsEmpty}>
+        {contractStrings.empty}
+      </Typography>
+    );
   }
   return (
-    <List aria-label={contractStrings.listHeading} data-testid={testIds.contractsList}>
+    <List
+      aria-label={contractStrings.listHeading}
+      data-testid={testIds.contractsList}
+    >
       {state.items.map((c) => (
         <ContractListItem key={c.id} contract={c} />
       ))}
