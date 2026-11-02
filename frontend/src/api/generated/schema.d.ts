@@ -36,6 +36,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/contracts/{id}/index": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["IndexContract"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -52,6 +68,15 @@ export interface components {
             /** Format: date-time */
             uploadedAtUtc: string;
             extractedText: string;
+            indexStatus: components["schemas"]["IndexStatus"];
+            sections: components["schemas"]["ContractSectionDto"][];
+        };
+        ContractSectionDto: {
+            /** Format: int32 */
+            order: number | string;
+            heading: string;
+            /** Format: int32 */
+            chunkCount: number | string;
         };
         ContractSummaryDto: {
             /** Format: uuid */
@@ -64,9 +89,12 @@ export interface components {
             pageCount: number | string;
             /** Format: date-time */
             uploadedAtUtc: string;
+            indexStatus: components["schemas"]["IndexStatus"];
         };
         /** Format: binary */
         IFormFile: string;
+        /** @enum {unknown} */
+        IndexStatus: "NotIndexed" | "Indexing" | "Indexed" | "Failed";
         ProblemDetails: {
             type?: null | string;
             title?: null | string;
@@ -175,6 +203,55 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    IndexContract: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractDetailDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Bad Gateway */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };

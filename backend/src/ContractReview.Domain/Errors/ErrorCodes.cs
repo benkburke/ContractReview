@@ -10,4 +10,7 @@ public static class ErrorCodes
     public const string ContractNoText = "contract.no_text";
     public const string ContractPdfUnreadable = "contract.pdf_unreadable";
     public const string ContractNotFound = "contract.not_found";
+    public const string ContractIndexingInProgress = "contract.indexing_in_progress";
+    public const string ContractEmbeddingFailed = "contract.embedding_failed";
+    public const string ContractTooManyChunks = "contract.too_many_chunks";
 }

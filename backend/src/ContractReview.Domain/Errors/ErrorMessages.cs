@@ -10,4 +10,7 @@ public static class ErrorMessages
     public const string ContractNoText = "The PDF contains no extractable text. Scanned or image-only PDFs are not supported.";
     public const string ContractPdfUnreadable = "The PDF could not be read. It may be corrupt or encrypted.";
     public const string ContractNotFound = "The contract was not found.";
+    public const string ContractIndexingInProgress = "The contract is already being indexed.";
+    public const string ContractEmbeddingFailed = "The contract could not be indexed because the embedding service failed.";
+    public const string ContractTooManyChunks = "The contract has too many chunks to index.";
 }

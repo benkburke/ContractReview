@@ -10,6 +10,7 @@ import { apiClient } from "@/api/client";
 import type { components } from "@/api/generated/schema";
 import { isNotFound, readProblem } from "@/api/problem";
 import { AppLink } from "@/components/atoms/AppLink";
+import { IndexingPanel } from "@/components/organisms/IndexingPanel";
 import { ContractMeta } from "@/components/molecules/ContractMeta";
 import { routes } from "@/constants/routes";
 import { testIds } from "@/constants/testIds";
@@ -84,6 +85,7 @@ export function ContractDetailView({ id }: { id: string }) {
         {contract.title}
       </Typography>
       <ContractMeta contract={contract} />
+      <IndexingPanel contract={contract} onIndexed={(updated) => setState({ status: "ready", contract: updated })} />
       <Typography variant="h6" component="h2" sx={{ mt: 3, mb: 1 }}>
         {contractStrings.extractedText}
       </Typography>

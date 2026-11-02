@@ -13,6 +13,6 @@ public sealed class ListContractsHandler(IAppDbContext db)
             .AsNoTracking()
             .OrderByDescending(c => c.UploadedAtUtc)
             .ThenByDescending(c => c.Id)
-            .Select(c => new ContractSummaryDto(c.Id, c.Title, c.FileName, c.SizeBytes, c.PageCount, c.UploadedAtUtc))
+            .Select(c => new ContractSummaryDto(c.Id, c.Title, c.FileName, c.SizeBytes, c.PageCount, c.UploadedAtUtc, c.IndexStatus))
             .ToListAsync(cancellationToken);
 }

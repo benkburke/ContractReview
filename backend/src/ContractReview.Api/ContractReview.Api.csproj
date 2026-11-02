@@ -24,6 +24,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <OpenApiDocumentsDirectory>$(MSBuildProjectDirectory)/../../openapi</OpenApiDocumentsDirectory>
     <OpenApiGenerateDocumentsOptions>--file-name openapi</OpenApiGenerateDocumentsOptions>
+    <UserSecretsId>76c0d9a9-8c7e-453c-ad6e-0c00a91a5d75</UserSecretsId>
   </PropertyGroup>
 
   <Import Project="../../build/Migrations.targets" />

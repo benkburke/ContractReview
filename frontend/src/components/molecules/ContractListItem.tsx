@@ -1,6 +1,7 @@
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import type { components } from "@/api/generated/schema";
+import { IndexStatusChip } from "@/components/atoms/IndexStatusChip";
 import { AppLink } from "@/components/atoms/AppLink";
 import { routes } from "@/constants/routes";
 import { testIds } from "@/constants/testIds";
@@ -25,6 +26,7 @@ export function ContractListItem({ contract }: Props) {
         }
         secondary={secondary}
       />
+      <IndexStatusChip status={contract.indexStatus} />
     </ListItem>
   );
 }

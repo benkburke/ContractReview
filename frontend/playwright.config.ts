@@ -23,6 +23,7 @@ export default defineConfig({
       env: {
         ASPNETCORE_ENVIRONMENT: "Development",
         ConnectionStrings__AppDb: E2E_DB,
+        Embeddings__Provider: "Fake",
       },
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,

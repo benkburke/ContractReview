@@ -44,6 +44,31 @@ A Debug build of the API creates and migrates the `ContractReview_Dev` LocalDB d
 
 Upload size limit: `Upload:MaxFileBytes` (in `backend/src/ContractReview.Api/appsettings.json`) sets the maximum PDF size in bytes. The default is `10485760` (10 MB, D-012). Kestrel's request body limit is that value plus 1 MiB, so oversized requests can be rejected with 413 before the file is read. Override it with user-secrets or an environment variable (`Upload__MaxFileBytes`) if needed.
 
+### OpenRouter key and indexing
+
+Each uploaded contract is split into section-tagged chunks and embedded through OpenRouter (D-016, D-027). The API key is a secret: set it with user-secrets and never commit it or put it in `appsettings.json`:
+
+```bash
+cd backend/src/ContractReview.Api
+dotnet user-secrets set OpenRouter:ApiKey <your-key>
+```
+
+Without a key the app still starts. Uploads still succeed, but the contract stays `Failed` until it is retried (D-026). Use **Retry indexing** on the contract page, or `POST /api/contracts/{id}/index`.
+
+Indexing settings, all in `backend/src/ContractReview.Api/appsettings.json` unless noted:
+
+| Key | Default | Notes |
+|-----|---------|-------|
+| `OpenRouter:BaseUrl` | `https://openrouter.ai/api/v1` | OpenAI-compatible base URL. |
+| `OpenRouter:EmbeddingModel` | `openai/text-embedding-3-small` | 1536 dimensions (D-027). |
+| `Embeddings:Provider` | `OpenRouter` | `Fake` selects a deterministic local embedder with no network call. Tests, CI and e2e use it (D-028). Do not set it for normal development. |
+| `Indexing:BackfillOnStartup` | `true` | On startup, indexes every contract that is not `Indexed`, one at a time. |
+| `Indexing:ChunkSize` | `1200` | Characters per chunk, 200 to 8,000. |
+| `Indexing:ChunkOverlap` | `150` | Characters shared by consecutive chunks, 0 to half of `ChunkSize`. |
+| `Indexing:MaxChunks` | `2000` | Contracts over this fail with `contract.too_many_chunks`. |
+
+Settings can also be overridden with environment variables using `__` for nesting, for example `Embeddings__Provider=Fake`. Options are validated at startup.
+
 ## Running the apps
 
 Backend API, from `backend/`:

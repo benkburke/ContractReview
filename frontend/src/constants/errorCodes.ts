@@ -5,6 +5,8 @@ export const errorCodes = {
   noText: "contract.no_text",
   pdfUnreadable: "contract.pdf_unreadable",
   notFound: "contract.not_found",
+  indexingInProgress: "contract.indexing_in_progress",
+  embeddingFailed: "contract.embedding_failed",
 } as const;
 
 export const httpStatus = {

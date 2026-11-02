@@ -1,4 +1,5 @@
 using ContractReview.Application.Abstractions.Messaging;
+using ContractReview.Application.Features.Contracts.Indexing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ContractReview.Application;
@@ -20,6 +21,7 @@ public static class DependencyInjection
             }
         }
 
+        services.AddSingleton<IContractChunker, ContractChunker>();
         return services;
     }
 }

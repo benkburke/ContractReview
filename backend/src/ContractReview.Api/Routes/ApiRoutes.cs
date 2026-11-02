@@ -8,4 +8,5 @@ public static class ApiRoutes
     public const string HubsPrefix = "/hubs";
     public const string Contracts = "/api/contracts";
     public const string ContractById = "/{id:guid}";
+    public const string ContractIndex = "/{id:guid}/index";
 }

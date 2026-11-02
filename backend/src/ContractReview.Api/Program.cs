@@ -27,6 +27,11 @@ var uploadOptions = builder.Configuration.GetSection(UploadOptions.SectionName).
 builder.WebHost.ConfigureKestrel(kestrel => kestrel.Limits.MaxRequestBodySize = uploadOptions.MaxRequestBytes);
 builder.Services.Configure<FormOptions>(form => form.MultipartBodyLengthLimit = uploadOptions.MaxRequestBytes);
 
+builder.Services.AddOptions<IndexingOptions>()
+    .BindConfiguration(IndexingOptions.SectionName)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -41,6 +46,7 @@ builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = 
     }
 });
 builder.Services.AddExceptionHandler<DomainExceptionHandler>();
+builder.Services.AddExceptionHandler<EmbeddingFailedExceptionHandler>();
 builder.Services.AddExceptionHandler<BadRequestExceptionHandler>();
 builder.Services.AddHealthChecks();
 builder.Services.AddOpenApi(ApiInfo.DocumentName, options =>

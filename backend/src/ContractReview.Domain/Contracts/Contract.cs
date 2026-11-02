@@ -4,6 +4,8 @@ namespace ContractReview.Domain.Contracts;
 
 public sealed class Contract
 {
+    private readonly List<ContractChunk> chunks = [];
+
     private Contract()
     {
     }
@@ -25,6 +27,19 @@ public sealed class Contract
     public string ExtractedText { get; private set; } = string.Empty;
 
     public DateTime UploadedAtUtc { get; private set; }
+
+    public IndexStatus IndexStatus { get; private set; } = IndexStatus.NotIndexed;
+
+    /// <summary>The error code of the last failed indexing attempt; null unless <see cref="IndexStatus"/> is Failed.</summary>
+    public string? IndexError { get; private set; }
+
+    public DateTime? IndexedAtUtc { get; private set; }
+
+    public string? EmbeddingModel { get; private set; }
+
+    public int? EmbeddingDimensions { get; private set; }
+
+    public IReadOnlyCollection<ContractChunk> Chunks => chunks;
 
     public static Contract Upload(
         string? title,
@@ -95,4 +110,82 @@ public sealed class Contract
             throw new DomainException(ErrorCodes.ContractFileTooLarge, ErrorMessages.ContractFileTooLarge);
         }
     }
+
+    /// <summary>
+    /// Moves the contract to Indexing. Throws <see cref="ErrorCodes.ContractIndexingInProgress"/> when it is already
+    /// Indexing, unless <paramref name="resumeStale"/> is set (the startup backfill taking over an interrupted run).
+    /// </summary>
+    public void StartIndexing(bool resumeStale = false)
+    {
+        if (IndexStatus == IndexStatus.Indexing && !resumeStale)
+        {
+            throw new DomainException(
+                ErrorCodes.ContractIndexingInProgress, ErrorMessages.ContractIndexingInProgress, DomainErrorKind.Conflict);
+        }
+
+        IndexStatus = IndexStatus.Indexing;
+        IndexError = null;
+    }
+
+    /// <summary>Atomically replaces all chunks and marks the contract Indexed. Only allowed while Indexing.</summary>
+    public void ReplaceChunks(IReadOnlyList<ContractChunkData> newChunks, string model, int dimensions, DateTime indexedAtUtc)
+    {
+        EnsureIndexing();
+        if (newChunks.Count == 0)
+        {
+            throw new DomainException(ErrorCodes.ContractNoText, ErrorMessages.ContractNoText, DomainErrorKind.Conflict);
+        }
+
+        if (string.IsNullOrWhiteSpace(model) || model.Length > ContractRules.MaxEmbeddingModelLength || dimensions < 1)
+        {
+            throw RuleViolated();
+        }
+
+        var positions = new HashSet<(int SectionOrder, int ChunkOrder)>();
+        foreach (var chunk in newChunks)
+        {
+            if (chunk.Vector.Length != dimensions
+                || chunk.SectionOrder < 0
+                || chunk.ChunkOrder < 0
+                || string.IsNullOrWhiteSpace(chunk.SectionHeading)
+                || chunk.SectionHeading.Length > ContractRules.MaxSectionHeadingLength
+                || string.IsNullOrWhiteSpace(chunk.Text)
+                || !positions.Add((chunk.SectionOrder, chunk.ChunkOrder)))
+            {
+                throw RuleViolated();
+            }
+        }
+
+        chunks.Clear();
+        chunks.AddRange(newChunks.Select(chunk => ContractChunk.Create(Id, chunk)));
+        EmbeddingModel = model;
+        EmbeddingDimensions = dimensions;
+        IndexedAtUtc = indexedAtUtc;
+        IndexError = null;
+        IndexStatus = IndexStatus.Indexed;
+    }
+
+    /// <summary>Marks the running indexing attempt as Failed with an error code. Existing chunks are kept unchanged.</summary>
+    public void FailIndexing(string errorCode)
+    {
+        EnsureIndexing();
+        if (string.IsNullOrWhiteSpace(errorCode) || errorCode.Length > ContractRules.MaxIndexErrorLength)
+        {
+            throw RuleViolated();
+        }
+
+        IndexError = errorCode;
+        IndexStatus = IndexStatus.Failed;
+    }
+
+    private void EnsureIndexing()
+    {
+        if (IndexStatus != IndexStatus.Indexing)
+        {
+            throw new DomainException(ErrorCodes.Conflict, ErrorMessages.Conflict, DomainErrorKind.Conflict);
+        }
+    }
+
+    private static DomainException RuleViolated() =>
+        new(ErrorCodes.DomainRuleViolated, ErrorMessages.DomainRuleViolated);
 }

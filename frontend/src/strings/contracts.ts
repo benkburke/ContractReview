@@ -23,6 +23,26 @@ export const contractStrings = {
   itemSeparator: " · ",
 } as const;
 
+export const indexStrings = {
+  status: {
+    Indexed: "Indexed",
+    NotIndexed: "Not indexed",
+    Indexing: "Indexing",
+    Failed: "Indexing failed",
+  },
+  sectionsHeading: "Sections",
+  chunk: "chunk",
+  chunks: "chunks",
+  notIndexedMessage: "This contract has not been indexed yet.",
+  failedMessage: "Indexing this contract failed.",
+  indexingMessage: "This contract is being indexed.",
+  retry: "Retry indexing",
+  retrying: "Indexing…",
+  retrySuccess: "Indexing finished.",
+  inProgress: "Indexing is already in progress. Please wait a moment.",
+  embeddingFailed: "The embedding service could not index this contract. Please try again later.",
+} as const;
+
 export const contractErrorStrings = {
   titleRequired: "Enter a title.",
   titleTooLong: "The title must be 200 characters or fewer.",

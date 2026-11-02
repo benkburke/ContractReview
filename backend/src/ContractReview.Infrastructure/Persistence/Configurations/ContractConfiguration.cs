@@ -25,5 +25,25 @@ public sealed class ContractConfiguration : IEntityTypeConfiguration<Contract>
             .HasConversion(v => v, v => DateTime.SpecifyKind(v, DateTimeKind.Utc))
             .IsRequired();
         builder.HasIndex(c => c.UploadedAtUtc);
+
+        // IndexStatus is a concurrency token so two callers cannot both claim the same contract for indexing.
+        builder.Property(c => c.IndexStatus)
+            .HasConversion<string>()
+            .HasMaxLength(ContractRules.MaxIndexStatusLength)
+            .HasDefaultValue(IndexStatus.NotIndexed)
+            .IsConcurrencyToken()
+            .IsRequired();
+        builder.Property(c => c.IndexError).HasMaxLength(ContractRules.MaxIndexErrorLength);
+        builder.Property(c => c.IndexedAtUtc)
+            .HasColumnType("datetime2")
+            .HasConversion(v => v, v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : v);
+        builder.Property(c => c.EmbeddingModel).HasMaxLength(ContractRules.MaxEmbeddingModelLength);
+        builder.Property(c => c.EmbeddingDimensions);
+        builder.HasIndex(c => c.IndexStatus);
+
+        builder.HasMany(c => c.Chunks)
+            .WithOne()
+            .HasForeignKey(ch => ch.ContractId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

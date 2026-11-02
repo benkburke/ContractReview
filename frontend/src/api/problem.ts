@@ -1,5 +1,5 @@
 import { errorCodes, httpStatus } from "@/constants/errorCodes";
-import { contractErrorStrings } from "@/strings/contracts";
+import { contractErrorStrings, indexStrings } from "@/strings/contracts";
 
 export type ProblemInfo = { status?: number; code?: string; detail?: string };
 
@@ -40,6 +40,17 @@ export function mapUploadProblem(problem: ProblemInfo): UploadError {
       return { field: "title", message: contractErrorStrings.titleRequired };
     default:
       return { field: "form", message: contractErrorStrings.generic };
+  }
+}
+
+export function mapIndexProblem(problem: ProblemInfo): string {
+  switch (problem.code) {
+    case errorCodes.indexingInProgress:
+      return indexStrings.inProgress;
+    case errorCodes.embeddingFailed:
+      return indexStrings.embeddingFailed;
+    default:
+      return contractErrorStrings.generic;
   }
 }
 

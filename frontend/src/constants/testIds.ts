@@ -23,4 +23,11 @@ export const testIds = {
   contractNotFound: "contract-not-found",
   contractNotFoundBack: "contract-not-found-back",
   contractDetailError: "contract-detail-error",
+  indexStatusChip: "index-status-chip",
+  indexSections: "index-sections",
+  indexSectionItem: "index-section-item",
+  indexMessage: "index-message",
+  indexRetry: "index-retry",
+  indexRetrySuccess: "index-retry-success",
+  indexRetryError: "index-retry-error",
 } as const;

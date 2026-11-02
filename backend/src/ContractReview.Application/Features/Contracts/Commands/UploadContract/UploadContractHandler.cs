@@ -1,9 +1,13 @@
+using ContractReview.Application.Abstractions.Embeddings;
 using ContractReview.Application.Abstractions.Messaging;
 using ContractReview.Application.Abstractions.Pdf;
 using ContractReview.Application.Abstractions.Persistence;
+using ContractReview.Application.Features.Contracts.Commands.IndexContract;
 using ContractReview.Application.Options;
 using ContractReview.Domain.Contracts;
 using ContractReview.Domain.Errors;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace ContractReview.Application.Features.Contracts.Commands.UploadContract;
@@ -12,7 +16,9 @@ public sealed class UploadContractHandler(
     IAppDbContext db,
     IPdfTextExtractor extractor,
     IOptions<UploadOptions> options,
-    TimeProvider clock) : ICommandHandler<UploadContractCommand, ContractSummaryDto>
+    TimeProvider clock,
+    ICommandHandler<IndexContractCommand, ContractDetailDto?> indexer,
+    ILogger<UploadContractHandler> logger) : ICommandHandler<UploadContractCommand, ContractSummaryDto>
 {
     private const int ReadChunkBytes = 81920;
 
@@ -57,8 +63,36 @@ public sealed class UploadContractHandler(
         db.Contracts.Add(contract);
         await db.SaveChangesAsync(cancellationToken);
 
+        var indexStatus = await IndexAsync(contract, cancellationToken);
         return new ContractSummaryDto(
-            contract.Id, contract.Title, contract.FileName, contract.SizeBytes, contract.PageCount, contract.UploadedAtUtc);
+            contract.Id, contract.Title, contract.FileName, contract.SizeBytes, contract.PageCount, contract.UploadedAtUtc, indexStatus);
+    }
+
+    /// <summary>
+    /// Indexes the saved contract. An indexing failure never fails the upload (D-026): the contract stays stored as
+    /// Failed and can be retried.
+    /// </summary>
+    private async Task<IndexStatus> IndexAsync(Contract contract, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await indexer.HandleAsync(new IndexContractCommand(contract.Id), cancellationToken);
+            return contract.IndexStatus;
+        }
+        catch (Exception ex) when (ex is DomainException or EmbeddingFailedException)
+        {
+            // Already logged and recorded as Failed by the index handler.
+            return contract.IndexStatus;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogError(ex, "Indexing contract {ContractId} after upload failed unexpectedly", contract.Id);
+            return await db.Contracts
+                .AsNoTracking()
+                .Where(c => c.Id == contract.Id)
+                .Select(c => c.IndexStatus)
+                .FirstAsync(CancellationToken.None);
+        }
     }
 
     private static DomainException NotPdf() =>

@@ -32,6 +32,13 @@ namespace ContractReview.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int?>("EmbeddingDimensions")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EmbeddingModel")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<string>("ExtractedText")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -44,6 +51,21 @@ namespace ContractReview.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("IndexError")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("IndexStatus")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("NotIndexed");
+
+                    b.Property<DateTime?>("IndexedAtUtc")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("PageCount")
                         .HasColumnType("int");
@@ -61,9 +83,60 @@ namespace ContractReview.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("IndexStatus");
+
                     b.HasIndex("UploadedAtUtc");
 
                     b.ToTable("Contracts", (string)null);
+                });
+
+            modelBuilder.Entity("ContractReview.Domain.Contracts.ContractChunk", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("ChunkOrder")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ContractId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("Embedding")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("SectionHeading")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("SectionOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContractId", "SectionOrder", "ChunkOrder")
+                        .IsUnique();
+
+                    b.ToTable("ContractChunks", (string)null);
+                });
+
+            modelBuilder.Entity("ContractReview.Domain.Contracts.ContractChunk", b =>
+                {
+                    b.HasOne("ContractReview.Domain.Contracts.Contract", null)
+                        .WithMany("Chunks")
+                        .HasForeignKey("ContractId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ContractReview.Domain.Contracts.Contract", b =>
+                {
+                    b.Navigation("Chunks");
                 });
 #pragma warning restore 612, 618
         }

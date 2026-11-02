@@ -198,3 +198,43 @@ Recorded by the coordinator with `node scripts/decision.mjs`. Append-only: a cha
 - Why: Reflects D-015..D-023
 - Who: You chose
 - Source: docs/project.md
+
+## D-026 Embedding failure during upload
+- Date: 2026-11-02
+- Options: Keep contract as Failed with Retry | Reject the upload
+- Choice: Keep contract and text stored with indexStatus Failed; Retry indexing button and startup backfill retry
+- Why: No data loss; upload stays usable when OpenRouter is down
+- Who: Claude proposed; you accepted
+- Source: specs/contract-chunks-embeddings.md
+
+## D-027 Embedding model
+- Date: 2026-11-02
+- Options: openai/text-embedding-3-small | openai/text-embedding-3-large
+- Choice: openai/text-embedding-3-small (1536 dims), configurable via OpenRouter:EmbeddingModel
+- Why: Cheap and sufficient for single-contract retrieval
+- Who: Claude proposed; you accepted
+- Source: specs/contract-chunks-embeddings.md
+
+## D-028 Embeddings in tests, CI and e2e
+- Date: 2026-11-02
+- Options: Deterministic fake embedder via config | Call OpenRouter in e2e
+- Choice: Fake embedder selected by Embeddings:Provider=Fake in tests, CI and e2e; OpenRouter by default
+- Why: No API key or network in CI; deterministic tests
+- Who: Claude proposed; you accepted
+- Source: specs/contract-chunks-embeddings.md
+
+## D-029 Status code when re-indexing hits too many chunks or no chunks
+- Date: 2026-11-02
+- Options: 409 with contract.too_many_chunks / contract.no_text | Add 400 to the contract
+- Choice: 409 with contract.too_many_chunks or contract.no_text
+- Why: Keeps the approved HTTP contract unchanged
+- Who: Claude proposed; you accepted
+- Source: specs/contract-chunks-embeddings.md
+
+## D-030 Re-indexing an already indexed contract
+- Date: 2026-11-02
+- Options: Allowed, old chunks kept on failure | Only Failed/NotIndexed
+- Choice: Allowed; a failed run keeps the old chunks
+- Why: Needed for atomic chunk replacement (AC7)
+- Who: Claude proposed; you accepted
+- Source: specs/contract-chunks-embeddings.md

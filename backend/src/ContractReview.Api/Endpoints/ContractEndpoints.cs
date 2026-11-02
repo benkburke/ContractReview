@@ -2,6 +2,7 @@ using ContractReview.Api.Http;
 using ContractReview.Api.Routes;
 using ContractReview.Application.Abstractions.Messaging;
 using ContractReview.Application.Features.Contracts;
+using ContractReview.Application.Features.Contracts.Commands.IndexContract;
 using ContractReview.Application.Features.Contracts.Commands.UploadContract;
 using ContractReview.Application.Features.Contracts.Queries.GetContract;
 using ContractReview.Application.Features.Contracts.Queries.ListContracts;
@@ -16,6 +17,7 @@ public static class ContractEndpoints
     public const string UploadContractName = "UploadContract";
     public const string ListContractsName = "ListContracts";
     public const string GetContractName = "GetContract";
+    public const string IndexContractName = "IndexContract";
 
     public static IEndpointRouteBuilder MapContractEndpoints(this IEndpointRouteBuilder app)
     {
@@ -32,6 +34,12 @@ public static class ContractEndpoints
         group.MapGet(ApiRoutes.ContractById, GetAsync)
             .WithName(GetContractName)
             .ProducesProblem(StatusCodes.Status404NotFound);
+
+        group.MapPost(ApiRoutes.ContractIndex, IndexAsync)
+            .WithName(IndexContractName)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status502BadGateway);
 
         return app;
     }
@@ -59,6 +67,26 @@ public static class ContractEndpoints
         CancellationToken cancellationToken)
     {
         var result = await handler.HandleAsync(new GetContractQuery(id), cancellationToken);
+        if (result is not null)
+        {
+            return TypedResults.Ok(result);
+        }
+
+        var problem = new ProblemDetails
+        {
+            Status = StatusCodes.Status404NotFound,
+            Detail = ErrorMessages.ContractNotFound,
+        };
+        problem.Extensions[ProblemExtensions.Code] = ErrorCodes.ContractNotFound;
+        return TypedResults.Problem(problem);
+    }
+
+    private static async Task<Results<Ok<ContractDetailDto>, ProblemHttpResult>> IndexAsync(
+        Guid id,
+        ICommandHandler<IndexContractCommand, ContractDetailDto?> handler,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(new IndexContractCommand(id), cancellationToken);
         if (result is not null)
         {
             return TypedResults.Ok(result);
