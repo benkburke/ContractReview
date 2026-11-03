@@ -22,6 +22,7 @@
 #   Managed identity: federated credential for subject repo:benkburke/ContractReview:environment:production
 #   and the "SQL Server Contributor" role on the SQL server. It is used only to open and close a
 #   temporary SQL firewall rule for the runner; deployments use the publish profiles.
+#   The identity must also be able to discover the configured subscription; see docs/setup.md.
 #
 #   Web app settings (configured in Azure, not here):
 #     both:     SCM Basic Auth Publishing Credentials = On (required by publish profiles)
@@ -169,10 +170,17 @@ jobs:
           fi
 
       - uses: azure/login@v2
+        id: azure-login
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID || vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Explain Azure login failure
+        if: failure() && steps.azure-login.outcome == 'failure'
+        run: |
+          echo "::error::Azure login failed. If the error is 'No subscriptions found', verify AZURE_CLIENT_ID, AZURE_TENANT_ID and the configured subscription refer to the same Azure identity and subscription."
+          echo "::error::An Azure administrator must verify the managed identity's RBAC assignments and subscription visibility. See docs/setup.md#azure-deployment for repair steps."
 
       # GitHub-hosted runners are not covered by "Allow Azure services"; open the firewall for this runner only.
       - name: Open SQL firewall for runner
