@@ -22,6 +22,7 @@ import { AppLink } from "@/components/atoms/AppLink";
 import { ClaimStatusBanner } from "@/components/atoms/ClaimStatusBanner";
 import { ConfidenceGauge } from "@/components/atoms/ConfidenceGauge";
 import { CitationsCard } from "@/components/molecules/CitationsCard";
+import { ClaimProgressSteps } from "@/components/molecules/ClaimProgressSteps";
 import { FieldError } from "@/components/molecules/FieldError";
 import { ClaimReviewPanel } from "@/components/molecules/ClaimReviewPanel";
 import { ItemsCard } from "@/components/molecules/ItemsCard";
@@ -29,6 +30,8 @@ import { ResultCard } from "@/components/molecules/ResultCard";
 import { claimFieldIds, claimLimits } from "@/constants/claims";
 import { routes } from "@/constants/routes";
 import { testIds } from "@/constants/testIds";
+import { claimProgressSteps } from "@/realtime/contracts";
+import { useClaimProgress } from "@/realtime/useClaimProgress";
 import { claimErrorStrings, claimStrings } from "@/strings/claims";
 
 type Claim = components["schemas"]["ClaimEvaluationDto"];
@@ -37,6 +40,11 @@ type State =
   | { status: "error" }
   | { status: "notFound" }
   | { status: "ready"; claim: Claim };
+
+// MUI dims disabled helper text to text.disabled (2.67:1 on white); keep it at text.secondary (WCAG AA 4.5:1).
+const disabledHelperSx = {
+  "&.Mui-disabled": { color: "text.secondary" },
+} as const;
 
 type Props = { contractId: string; claimId: string };
 
@@ -51,6 +59,7 @@ export function ClaimResultView({ contractId, claimId }: Props) {
   const [reviewOpen, setReviewOpen] = useState(false);
   const reviewSummaryRef = useRef<HTMLDivElement>(null);
   const reviewPanelRef = useRef<HTMLDivElement>(null);
+  const progress = useClaimProgress(contractId);
 
   useEffect(() => {
     let active = true;
@@ -130,6 +139,15 @@ export function ClaimResultView({ contractId, claimId }: Props) {
       ? claimStrings.followUpFallback
       : null);
 
+  const showFailedSteps =
+    progress.seen[progress.seen.length - 1] === claimProgressSteps.failed;
+  const steps =
+    busy || showFailedSteps ? (
+      <div data-testid={testIds.claimProgress}>
+        <ClaimProgressSteps seen={progress.seen} />
+      </div>
+    ) : null;
+
   const review = claim.review ?? null;
   const reviewDisagrees =
     review?.state === "Completed" && review.agreesWithPrimary === false;
@@ -144,8 +162,15 @@ export function ClaimResultView({ contractId, claimId }: Props) {
     if (busy || !level) return;
     setBusy(true);
     setReError(null);
-    const outcome = await evaluateClaim(contractId, claim.claimText, level);
+    progress.reset();
+    const outcome = await evaluateClaim(
+      contractId,
+      claim.claimText,
+      level,
+      progress.getConnectionId(),
+    );
     if (outcome.ok) {
+      progress.reset();
       router.push(routes.claimDetail(contractId, outcome.claimId));
       setBusy(false);
       setLevel("");
@@ -163,6 +188,7 @@ export function ClaimResultView({ contractId, claimId }: Props) {
     }
     setBusy(true);
     setAnswerError(null);
+    progress.reset();
     const composed = composeFollowUpClaim(
       claim.claimText,
       followUpText,
@@ -172,8 +198,10 @@ export function ClaimResultView({ contractId, claimId }: Props) {
       contractId,
       composed,
       claim.coverageLevelRequested ?? null,
+      progress.getConnectionId(),
     );
     if (outcome.ok) {
+      progress.reset();
       router.push(routes.claimDetail(contractId, outcome.claimId));
       setBusy(false);
       setAnswer("");
@@ -306,7 +334,10 @@ export function ClaimResultView({ contractId, claimId }: Props) {
                       : claimFieldIds.answerHelp,
                     "data-testid": testIds.claimFollowUpAnswer,
                   },
-                  formHelperText: { id: claimFieldIds.answerHelp },
+                  formHelperText: {
+                    id: claimFieldIds.answerHelp,
+                    sx: disabledHelperSx,
+                  },
                 }}
               />
               <FieldError
@@ -325,12 +356,13 @@ export function ClaimResultView({ contractId, claimId }: Props) {
                   {busy ? claimStrings.reevaluating : claimStrings.answerSubmit}
                 </Button>
               </Box>
-              <div role="status">
+              <div role="status" aria-live="polite">
                 {busy ? (
                   <Typography color="text.secondary">
                     {claimStrings.waitNote}
                   </Typography>
                 ) : null}
+                {steps}
               </div>
             </Paper>
           ) : null}
@@ -372,12 +404,13 @@ export function ClaimResultView({ contractId, claimId }: Props) {
                   {busy ? claimStrings.reevaluating : claimStrings.reevaluate}
                 </Button>
               </Box>
-              <div role="status">
+              <div role="status" aria-live="polite">
                 {busy ? (
                   <Typography color="text.secondary">
                     {claimStrings.waitNote}
                   </Typography>
                 ) : null}
+                {steps}
               </div>
             </Paper>
           ) : null}
