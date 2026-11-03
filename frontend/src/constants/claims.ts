@@ -9,6 +9,14 @@ export const claimLimits = {
   gaugeMax: 100,
 } as const;
 
+export const claimHistoryLimits = {
+  pageSize: 20,
+  firstPage: 1,
+  textPreviewMax: 120,
+  ellipsis: "…",
+  headingId: "claim-history-heading",
+} as const;
+
 export const claimFieldIds = {
   heading: "claim-form-heading",
   text: "claim-text",

@@ -1,5 +1,5 @@
 # Claim history per contract
-Status: approved 2026-11-02
+Status: done 2026-11-02
 Roadmap: D3 (depth)
 
 ## Context
@@ -26,7 +26,7 @@ Both: backend (list query + endpoint) and frontend (Claim history section on the
 - Ordering: `createdAtUtc` desc, then `id` desc (stable). Uses the existing (`ContractId`, `CreatedAtUtc`) index.
 
 ## Validation rules and limits
-- `page`: 1–10,000; `pageSize`: 1–100. Out of range or non-integer → 400 `paging.invalid` (constant).
+- `page`: 1–10,000; `pageSize`: 1–100. Out of range → 400 `paging.invalid` (constant). A non-integer value is rejected by ASP.NET model binding with a plain 400 (no `paging.invalid` code); the frontend never sends one.
 
 ## Realtime
 None.

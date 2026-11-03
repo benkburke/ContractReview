@@ -105,6 +105,21 @@ Returns a stored claim, including a `Failed` one. Operation id `GetClaim`. Use i
 - `200 OK`: `ClaimEvaluationDto`.
 - `404 Not Found`: ProblemDetails with `code` `contract.not_found` (no contract with `id`) or `claim.not_found` (no claim with `claimId` under that contract).
 
+### GET /api/contracts/{id}/claims
+
+Lists a contract's claims, newest first (`createdAtUtc` desc, then `id` desc). Operation id `ListClaims`. Anonymous.
+
+| Parameter | In | Type | Required |
+|-----------|----|------|----------|
+| `id` | path | uuid | yes |
+| `page` | query | int, 1 to 10,000 | no (default 1) |
+| `pageSize` | query | int, 1 to 100 | no (default 20) |
+
+- `200 OK`: `ClaimHistoryPageDto` `{ items: ClaimSummaryDto[], page, pageSize, totalCount }`.
+- `ClaimSummaryDto`: `id`, `claimText`, `state` (`Evaluated` or `Failed`), `status` (nullable), `confidence` (nullable), `reviewAgrees` (nullable), `createdAtUtc`.
+- `400 Bad Request`: ProblemDetails with `code` `paging.invalid` when `page` or `pageSize` is out of range. A non-integer value returns a plain 400.
+- `404 Not Found`: ProblemDetails with `code` `contract.not_found`.
+
 ## Schemas
 
 `ContractSummaryDto`

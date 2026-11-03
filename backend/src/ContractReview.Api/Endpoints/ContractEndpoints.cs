@@ -4,6 +4,7 @@ using ContractReview.Application.Abstractions.Messaging;
 using ContractReview.Application.Features.Claims;
 using ContractReview.Application.Features.Claims.Commands.EvaluateClaim;
 using ContractReview.Application.Features.Claims.Queries.GetClaim;
+using ContractReview.Application.Features.Claims.Queries.ListClaims;
 using ContractReview.Application.Features.Contracts;
 using ContractReview.Application.Features.Contracts.Commands.IndexContract;
 using ContractReview.Application.Features.Contracts.Commands.UploadContract;
@@ -23,6 +24,7 @@ public static class ContractEndpoints
     public const string IndexContractName = "IndexContract";
     public const string EvaluateClaimName = "EvaluateClaim";
     public const string GetClaimName = "GetClaim";
+    public const string ListClaimsName = "ListClaims";
 
     public static IEndpointRouteBuilder MapContractEndpoints(this IEndpointRouteBuilder app)
     {
@@ -55,6 +57,11 @@ public static class ContractEndpoints
 
         group.MapGet(ApiRoutes.ContractClaimById, GetClaimAsync)
             .WithName(GetClaimName)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        group.MapGet(ApiRoutes.ContractClaims, ListClaimsAsync)
+            .WithName(ListClaimsName)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         return app;
@@ -142,6 +149,14 @@ public static class ContractEndpoints
         IQueryHandler<GetClaimQuery, ClaimEvaluationDto> handler,
         CancellationToken cancellationToken) =>
         TypedResults.Ok(await handler.HandleAsync(new GetClaimQuery(id, claimId), cancellationToken));
+
+    private static async Task<Ok<ClaimHistoryPageDto>> ListClaimsAsync(
+        Guid id,
+        IQueryHandler<ListClaimsQuery, ClaimHistoryPageDto> handler,
+        CancellationToken cancellationToken,
+        int page = 1,
+        int pageSize = 20) =>
+        TypedResults.Ok(await handler.HandleAsync(new ListClaimsQuery(id, page, pageSize), cancellationToken));
 
     private static ProblemHttpResult NotFoundProblem(string detail, string code)
     {

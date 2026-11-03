@@ -95,9 +95,7 @@ function Body({
         </Typography>
       </Box>
       <Box data-testid={testIds.claimReviewConfidence}>
-        <Typography>
-          {reviewStrings.confidenceLine(confidence)}
-        </Typography>
+        <Typography>{reviewStrings.confidenceLine(confidence)}</Typography>
         <LinearProgress
           variant="determinate"
           value={confidence}

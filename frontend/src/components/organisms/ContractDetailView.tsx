@@ -11,6 +11,7 @@ import type { components } from "@/api/generated/schema";
 import { isNotFound, readProblem } from "@/api/problem";
 import { AppLink } from "@/components/atoms/AppLink";
 import { AskClaimForm } from "@/components/organisms/AskClaimForm";
+import { ClaimHistory } from "@/components/organisms/ClaimHistory";
 import { IndexingPanel } from "@/components/organisms/IndexingPanel";
 import { ContractMeta } from "@/components/molecules/ContractMeta";
 import { routes } from "@/constants/routes";
@@ -116,6 +117,7 @@ export function ContractDetailView({ id }: { id: string }) {
           {claimStrings.notIndexed}
         </Alert>
       )}
+      <ClaimHistory contractId={contract.id} />
       <Box sx={{ mt: 3 }}>
         <IndexingPanel
           contract={contract}

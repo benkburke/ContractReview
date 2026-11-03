@@ -18,5 +18,6 @@ public static class ErrorMessages
     public const string ClaimTextInvalid = "The claim text is required and must be 5 to 2000 characters.";
     public const string ClaimCoverageLevelInvalid = "The coverage level, when given, must be 1 to 100 characters.";
     public const string ClaimNotFound = "The claim was not found.";
+    public const string PagingInvalid = "The page must be 1 to 10000 and the page size 1 to 100.";
     public const string ClaimEvaluationFailed = "The claim could not be evaluated. Try again.";
 }

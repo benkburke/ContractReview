@@ -67,6 +67,23 @@ export const claimStrings = {
   },
 } as const;
 
+export const claimHistoryStrings = {
+  heading: "Claim history",
+  empty: "No claims yet.",
+  loading: "Loading claim history…",
+  loadMore: "Load more",
+  loadingMore: "Loading…",
+  failed: "Failed",
+  loadError: "Could not load the claim history.",
+  contractNotFound: "This contract was not found.",
+  pagingInvalid: "The claim history request was invalid.",
+  moreLoaded: (n: number) =>
+    n === 1 ? "1 more claim loaded" : `${n} more claims loaded`,
+  confidenceText: (value: number) => `${value}% confidence`,
+  rowLabel: (text: string, status: string, date: string) =>
+    `${text}. ${status}. ${date}`,
+} as const;
+
 export const claimErrorStrings = {
   textInvalid: "Enter a claim between 5 and 2000 characters.",
   coverageInvalid: "The coverage level must be 100 characters or fewer.",

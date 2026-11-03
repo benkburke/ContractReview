@@ -1,5 +1,5 @@
 import { errorCodes, httpStatus } from "@/constants/errorCodes";
-import { claimErrorStrings } from "@/strings/claims";
+import { claimErrorStrings, claimHistoryStrings } from "@/strings/claims";
 import { contractErrorStrings, indexStrings } from "@/strings/contracts";
 
 export type ProblemInfo = { status?: number; code?: string; detail?: string };
@@ -85,6 +85,13 @@ export function mapClaimProblem(problem: ProblemInfo): {
     default:
       return { field: "form", message: contractErrorStrings.generic };
   }
+}
+
+export function mapClaimHistoryProblem(problem: ProblemInfo): string {
+  if (isNotFound(problem)) return claimHistoryStrings.contractNotFound;
+  if (problem.code === errorCodes.pagingInvalid)
+    return claimHistoryStrings.pagingInvalid;
+  return claimHistoryStrings.loadError;
 }
 
 export function isClaimNotFound(problem: ProblemInfo): boolean {

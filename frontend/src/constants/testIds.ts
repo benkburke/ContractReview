@@ -74,4 +74,12 @@ export const testIds = {
   claimReviewNote: "claim-review-note",
   claimReviewDisagreeBanner: "claim-review-disagree-banner",
   claimReviewDisagreeAction: "claim-review-disagree-action",
+  claimHistory: "claim-history",
+  claimHistoryList: "claim-history-list",
+  claimHistoryRow: "claim-history-row",
+  claimHistoryEmpty: "claim-history-empty",
+  claimHistoryLoading: "claim-history-loading",
+  claimHistoryError: "claim-history-error",
+  claimHistoryLoadMore: "claim-history-load-more",
+  claimHistoryAnnounce: "claim-history-announce",
 } as const;

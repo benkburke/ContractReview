@@ -13,6 +13,7 @@ export const errorCodes = {
   claimEvaluationFailed: "claim.evaluation_failed",
   notIndexed: "contract.not_indexed",
   embeddingModelMismatch: "contract.embedding_model_mismatch",
+  pagingInvalid: "paging.invalid",
 } as const;
 
 export const httpStatus = {
