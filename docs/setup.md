@@ -163,6 +163,14 @@ An Azure administrator must:
 
 Do not bypass this failure with `allow-no-subscriptions`: tenant-only login does not select the target subscription, and the SQL firewall commands still require subscription access. RBAC assignments must be repaired in Azure; a repository commit cannot grant them. See [Azure login without a subscription](https://github.com/Azure/login#login-without-subscription) and [Azure RBAC scope](https://learn.microsoft.com/azure/role-based-access-control/scope-overview).
 
+### Deployment succeeds but the application does not work
+
+- For the frontend's standalone Next.js package, set App Service **Configuration > General settings > Startup Command** to `node server.js`. An empty command can leave the deployed frontend returning HTTP 503.
+- The frontend deployment uses `clean: true` and `restart: true` to replace the deployed package and restart the app. Keep uploaded documents and other persistent data outside the frontend deployment directory; its contents are replaced on deployment.
+- Open the app's actual **Default domain**. A generated hostname suffix is not a deployment slot; a portal link containing `/slots/<hostname-suffix>` can return "Resource not found" even when the app exists.
+- Set the GitHub `production` variable `NEXT_PUBLIC_API_URL` to the complete API origin, including `https://`, without an `/api` suffix. Rebuild and redeploy the frontend after changing it; the value is embedded during the build. A bare hostname is treated as a relative browser URL and sends requests to the frontend instead.
+- Configure the API's SQL connection as an App Service connection string named `AppDb` (SQLAzure type), or as the app setting `ConnectionStrings__AppDb`. A connection named after the SQL server is not the key the API reads. Never paste connection-string values into logs or issue reports.
+
 ## Notes
 
 - There is no authentication (decision D-003). Anyone who can reach the API can call it.
