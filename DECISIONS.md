@@ -293,3 +293,43 @@ Recorded by the coordinator with `node scripts/decision.mjs`. Append-only: a cha
 - Choice: Keep PR #3 workflow and docs; human repairs the identity's role assignment and IDs in Azure
 - Why: az CLI validates --subscription against discovered subscriptions; the failure is an Azure access problem a commit cannot fix
 - Who: You chose
+
+## D-038 Is roadmap item D8 (Azure App Service + Azure SQL deployment pipeline) complete?
+- Date: 2026-11-02
+- Options: Complete | Still open
+- Choice: Complete: azure-deploy.yml deploys and the human confirmed the deploy works
+- Why: Human confirmed the Azure deploy is working
+- Who: You chose
+- Source: specs/roadmap.md
+
+## D-039 What to work on next?
+- Date: 2026-11-02
+- Options: T4 only | T4 then D1 and D3 | T4 then depth in roadmap order
+- Choice: T4, then D1 (second-pass evaluator) and D3 (claim history), ahead of D2
+- Why: Human prioritized these depth items
+- Who: You chose
+- Source: specs/roadmap.md
+
+## D-040 T4 live progress design
+- Date: 2026-11-02
+- Options: A: synchronous POST, push to caller's connection id | B: 202 + background evaluation + claim group
+- Choice: A: synchronous POST, push to the caller's SignalR connection id
+- Why: Smallest change; evaluation works without the hub
+- Who: Claude proposed; you accepted
+- Source: specs/live-evaluation-progress.md
+
+## D-041 Where to show second-pass reviewer disagreement
+- Date: 2026-11-02
+- Options: Debug panel only | Warning banner on results plus Debug panel
+- Choice: Warning banner on the results page and details in the Debug / Evaluation panel
+- Why: Disagreement should be visible without expanding the panel
+- Who: You chose
+- Source: specs/second-pass-evaluator.md
+
+## D-042 Second-pass reviewer model
+- Date: 2026-11-02
+- Options: Same as primary (openai/gpt-4o-mini) | Separate model (e.g. anthropic/claude-haiku-4.5)
+- Choice: Separate model for independent verification; default OpenRouter:ReviewModel = anthropic/claude-haiku-4.5
+- Why: Independent verification
+- Who: You chose
+- Source: specs/second-pass-evaluator.md
