@@ -1,0 +1,228 @@
+# Build and deploy ContractReview to Azure (Linux App Service + Azure SQL).
+#
+# Runs after the CI workflow succeeds on main, or manually (workflow_dispatch).
+# Order: build backend + frontend (parallel) -> apply EF Core migrations -> deploy API -> deploy frontend.
+#
+# One-time setup (no secret values live in this file):
+#   GitHub environment "production" (Settings > Environments).
+#   Secrets:
+#     AZURE_BACKEND_PUBLISH_PROFILE   publish profile of the API web app
+#     AZURE_FRONTEND_PUBLISH_PROFILE  publish profile of the frontend web app
+#     AZURE_SQL_CONNECTION_STRING     ADO.NET connection string used ONLY to apply migrations
+#     AZURE_CLIENT_ID                 client ID of the user-assigned managed identity (OIDC)
+#     AZURE_TENANT_ID                 Entra tenant ID
+#     AZURE_SUBSCRIPTION_ID           subscription ID
+#   Variables:
+#     AZURE_RESOURCE_GROUP            resource group of the SQL server
+#     AZURE_SQL_SERVER_NAME           logical SQL server name (without .database.windows.net)
+#     AZURE_BACKEND_WEBAPP_NAME       Linux Web App, .NET 10 stack
+#     AZURE_FRONTEND_WEBAPP_NAME      Linux Web App, Node 22+ LTS stack
+#     NEXT_PUBLIC_API_URL             public URL of the API, baked into the frontend at build time
+#
+#   Managed identity: federated credential for subject repo:benkburke/ContractReview:environment:production
+#   and the "SQL Server Contributor" role on the SQL server. It is used only to open and close a
+#   temporary SQL firewall rule for the runner; deployments use the publish profiles.
+#
+#   Web app settings (configured in Azure, not here):
+#     both:     SCM Basic Auth Publishing Credentials = On (required by publish profiles)
+#     backend:  ConnectionStrings__AppDb, ASPNETCORE_ENVIRONMENT=Production, CORS origin for the frontend URL
+#     frontend: SCM_DO_BUILD_DURING_DEPLOYMENT=false, Startup Command "node server.js"
+#               (publish-profile deploys cannot set the startup command)
+
+name: Deploy to Azure
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: azure-deploy-production
+  cancel-in-progress: false
+
+env:
+  DOTNET_VERSION: 10.0.x
+  NODE_VERSION: lts/*
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  NEXT_TELEMETRY_DISABLED: 1
+  # Deploy exactly the commit CI verified; fall back to the dispatched ref.
+  DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+jobs:
+  build-backend:
+    name: Build API and migration bundle
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DEPLOY_SHA }}
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore .NET tools
+        working-directory: backend
+        run: dotnet tool restore
+
+      - name: Publish API
+        working-directory: backend
+        run: >
+          dotnet publish src/ContractReview.Api/ContractReview.Api.csproj
+          --configuration Release
+          --output ${{ runner.temp }}/api
+          -p:ApplyMigrationsOnBuild=false
+
+      # A self-contained bundle runs without the SDK or source tree. It goes through
+      # AppDbContextFactory, which reads EF_CONNECTION and EF_ALLOW_NON_LOCAL at run time.
+      - name: Build EF Core migration bundle
+        working-directory: backend
+        run: >
+          dotnet tool run dotnet-ef migrations bundle
+          --project src/ContractReview.Infrastructure/ContractReview.Infrastructure.csproj
+          --startup-project src/ContractReview.Api/ContractReview.Api.csproj
+          --configuration Release
+          --self-contained
+          --target-runtime linux-x64
+          --output ${{ runner.temp }}/migrations/efbundle
+          --force
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: api
+          path: ${{ runner.temp }}/api
+          retention-days: 7
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: migrations
+          path: ${{ runner.temp }}/migrations
+          retention-days: 7
+
+  build-frontend:
+    name: Build frontend (standalone)
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DEPLOY_SHA }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+        run: npm run build
+
+      # output: 'standalone' emits server.js plus a minimal node_modules; static assets are copied in.
+      - name: Assemble standalone package
+        working-directory: frontend
+        run: |
+          cp -r public .next/standalone/public
+          mkdir -p .next/standalone/.next
+          cp -r .next/static .next/standalone/.next/static
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend
+          path: frontend/.next/standalone
+          include-hidden-files: true
+          retention-days: 7
+
+  migrate:
+    name: Apply EF Core migrations (Azure SQL)
+    needs: [build-backend, build-frontend]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: migrations
+          path: migrations
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # GitHub-hosted runners are not covered by "Allow Azure services"; open the firewall for this runner only.
+      - name: Open SQL firewall for runner
+        id: firewall
+        run: |
+          ip=$(curl -fsS https://api.ipify.org)
+          rule="gh-${{ github.run_id }}-${{ github.run_attempt }}"
+          az sql server firewall-rule create \
+            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
+            --server "${{ vars.AZURE_SQL_SERVER_NAME }}" \
+            --name "$rule" --start-ip-address "$ip" --end-ip-address "$ip" --output none
+          echo "rule=$rule" >> "$GITHUB_OUTPUT"
+
+      - name: Apply migrations
+        env:
+          EF_CONNECTION: ${{ secrets.AZURE_SQL_CONNECTION_STRING }}
+          EF_ALLOW_NON_LOCAL: "1"
+        run: |
+          chmod +x migrations/efbundle
+          ./migrations/efbundle
+
+      - name: Close SQL firewall
+        if: always() && steps.firewall.outputs.rule != ''
+        run: |
+          az sql server firewall-rule delete \
+            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
+            --server "${{ vars.AZURE_SQL_SERVER_NAME }}" \
+            --name "${{ steps.firewall.outputs.rule }}"
+
+  deploy-backend:
+    name: Deploy API
+    needs: migrate
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: api
+          path: api
+
+      - uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ vars.AZURE_BACKEND_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_BACKEND_PUBLISH_PROFILE }}
+          package: api
+
+  deploy-frontend:
+    name: Deploy frontend
+    needs: deploy-backend
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend
+          path: frontend
+
+      - uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ vars.AZURE_FRONTEND_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_FRONTEND_PUBLISH_PROFILE }}
+          package: frontend
