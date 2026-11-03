@@ -146,6 +146,23 @@ npm run gen:api
 
 `.github/workflows/ci.yml` runs the full gate (`node scripts/verify.mjs --e2e`) on `windows-latest` for pushes to `main` and for pull requests. On failure it uploads `.verify/` as the `verify-logs` artifact.
 
+## Azure deployment
+
+`.github/workflows/azure-deploy.yml` lists the required `production` environment secrets and variables. Its migration job uses OIDC to authenticate a managed identity, opens a temporary SQL firewall rule, runs the migration bundle, and removes the rule. Publish profiles authenticate the later app deployments; they do not grant the migration identity Azure access.
+
+### Azure login reports "No subscriptions found"
+
+This error occurs during Azure CLI subscription discovery, before any firewall change or EF Core migration. Supplying `AZURE_SUBSCRIPTION_ID` does not grant access to that subscription.
+
+An Azure administrator must:
+
+1. Verify that `AZURE_CLIENT_ID` is the **client ID** of the intended user-assigned managed identity, `AZURE_TENANT_ID` is its tenant, and `AZURE_SUBSCRIPTION_ID` is the subscription containing the SQL server. The subscription ID can be a secret or variable; if both exist, the secret takes precedence.
+2. In the SQL server's **Access control (IAM)**, check access for that identity's **principal/object ID** (not its client ID). Assign **SQL Server Contributor** on the exact SQL server if missing. Check for assignments to an old or recreated identity, or a server in another subscription.
+3. Allow Azure RBAC changes to propagate, then retry login. If subscription discovery is still denied, have the administrator approve subscription-level read access for discovery (for example, **Reader**, which also permits reading other resources throughout the subscription). Keep SQL write permissions scoped to the SQL server; do not grant subscription-wide Contributor just to fix login.
+4. Rerun the failed deployment after correcting Azure access. A rerun uses the original workflow and commit; dispatch a new deployment after merging workflow changes to test those changes.
+
+Do not bypass this failure with `allow-no-subscriptions`: tenant-only login does not select the target subscription, and the SQL firewall commands still require subscription access. RBAC assignments must be repaired in Azure; a repository commit cannot grant them. See [Azure login without a subscription](https://github.com/Azure/login#login-without-subscription) and [Azure RBAC scope](https://learn.microsoft.com/azure/role-based-access-control/scope-overview).
+
 ## Notes
 
 - There is no authentication (decision D-003). Anyone who can reach the API can call it.
