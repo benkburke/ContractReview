@@ -24,6 +24,8 @@ export const claimStrings = {
   noItems: "None listed.",
   noCitations: "No clauses cited.",
   followUp: "Follow-up question",
+  followUpFallback:
+    "Please describe the affected part, the symptoms and when they started, then submit a new claim.",
   pickerLabel: "Which coverage level applies?",
   reevaluate: "Evaluate again",
   reevaluating: "Evaluating…",

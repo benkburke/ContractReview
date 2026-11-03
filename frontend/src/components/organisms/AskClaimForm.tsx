@@ -56,6 +56,10 @@ export function AskClaimForm({ contractId }: { contractId: string }) {
     );
     if (outcome.ok) {
       router.push(routes.claimDetail(contractId, outcome.claimId));
+      setBusy(false);
+      setText("");
+      setCoverage("");
+      setErrors(noErrors);
       return;
     }
     setErrors({ ...noErrors, [outcome.field]: outcome.message });

@@ -117,6 +117,11 @@ export function ClaimResultView({ contractId, claimId }: Props) {
 
   const { claim } = state;
   const result = claim.result;
+  const followUpText =
+    result?.followUpQuestion ||
+    (result?.status === "InsufficientInformation" && !result.needsCoverageLevel
+      ? claimStrings.followUpFallback
+      : null);
 
   async function reevaluate() {
     if (busy || !level) return;
@@ -125,6 +130,8 @@ export function ClaimResultView({ contractId, claimId }: Props) {
     const outcome = await evaluateClaim(contractId, claim.claimText, level);
     if (outcome.ok) {
       router.push(routes.claimDetail(contractId, outcome.claimId));
+      setBusy(false);
+      setLevel("");
       return;
     }
     setReError(outcome.message);
@@ -191,12 +198,12 @@ export function ClaimResultView({ contractId, claimId }: Props) {
             testId={testIds.claimExcludedItems}
           />
           <CitationsCard citations={result.citations} />
-          {result.followUpQuestion ? (
+          {followUpText ? (
             <Alert severity="info" data-testid={testIds.claimFollowUp}>
               <Typography component="p" sx={{ fontWeight: 600 }}>
                 {claimStrings.followUp}
               </Typography>
-              {result.followUpQuestion}
+              {followUpText}
             </Alert>
           ) : null}
           {result.needsCoverageLevel ? (

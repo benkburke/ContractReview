@@ -1,0 +1,9 @@
+# Fix: claim form stuck on "Evaluating…", missing follow-up prompt, form position
+- **Problem 1:** after a claim is evaluated and the user clicks "Back to contract", the ask form still shows "Evaluating…" and is disabled until a page refresh.
+- **Cause 1:** `cacheComponents: true` makes Next 16 keep visited routes alive in React `<Activity>`, so `AskClaimForm` keeps `busy=true` (it returns after `router.push` without resetting). Same pattern in `ClaimResultView.reevaluate`.
+- **Change 1 (frontend):** reset `busy` (and clear the form) once the navigation is triggered or when the route is hidden (effect cleanup); apply to both components.
+- **Problem 2:** an `InsufficientInformation` result sometimes shows no question to answer.
+- **Cause 2:** `followUpQuestion` can be null for that status: the D-032 downgrade (decisive answer without citations), the D-035 normalization (level asked, no tiers), or the model omitting it. The page only renders the follow-up when the field is set.
+- **Change 2:** frontend shows a fallback follow-up prompt (new `claimStrings` constant) when status is `InsufficientInformation`, no `followUpQuestion` and no level picker; backend `ClaimSystemPrompt` rule 4 says InsufficientInformation must always include a follow-up question. No contract change.
+- **Change 3 (frontend):** in `ContractDetailView`, render `AskClaimForm` / not-indexed alert directly after `ContractMeta`, above `IndexingPanel` (the parsed sections) and the extracted text. Keep `onIndexed` behavior so the form appears once indexing finishes.
+- **Owners:** frontend (1, 2, 3), backend (prompt line in 2). **Regression tests:** Vitest — AskClaimForm resets after a successful submit/hide; ClaimResultView shows the fallback follow-up for InsufficientInformation with null question; detail view renders the form before the extracted text.

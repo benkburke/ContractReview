@@ -105,12 +105,6 @@ export function ContractDetailView({ id }: { id: string }) {
         {contract.title}
       </Typography>
       <ContractMeta contract={contract} />
-      <IndexingPanel
-        contract={contract}
-        onIndexed={(updated) =>
-          setState({ status: "ready", contract: updated })
-        }
-      />
       {contract.indexStatus === "Indexed" ? (
         <AskClaimForm contractId={contract.id} />
       ) : (
@@ -122,6 +116,14 @@ export function ContractDetailView({ id }: { id: string }) {
           {claimStrings.notIndexed}
         </Alert>
       )}
+      <Box sx={{ mt: 3 }}>
+        <IndexingPanel
+          contract={contract}
+          onIndexed={(updated) =>
+            setState({ status: "ready", contract: updated })
+          }
+        />
+      </Box>
       <Typography variant="h6" component="h2" sx={{ mt: 3, mb: 1 }}>
         {contractStrings.extractedText}
       </Typography>
