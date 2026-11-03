@@ -278,3 +278,18 @@ Recorded by the coordinator with `node scripts/decision.mjs`. Append-only: a cha
 - Why: The answer is otherwise valid; rejecting it fails every evaluation of contracts whose excerpts name no tiers, and the retry at temperature 0 repeats the same output
 - Who: Claude proposed; you accepted
 - Source: specs/fixes/2026-11-02-needs-level-without-options.md
+
+## D-036 How does the user answer a claim follow-up question?
+- Date: 2026-11-02
+- Options: Append answer to claim text and re-evaluate | Also send answer as coverageLevel when about tiers | Full feature with new endpoint
+- Choice: Free-text answer box; re-evaluate as a new claim with text = original claim + question + answer, capped at ClaimRules.MaxTextLength; existing POST endpoint
+- Why: Works for every follow-up type without guessing intent and needs no contract change
+- Who: Claude proposed; you accepted
+- Source: specs/fixes/2026-11-02-answer-follow-up.md
+
+## D-037 How to fix 'No subscriptions found' in the Azure migrate job?
+- Date: 2026-11-02
+- Options: Workflow change (allow-no-subscriptions or az rest) | Keep PR #3 diagnostics and repair RBAC/IDs in Azure
+- Choice: Keep PR #3 workflow and docs; human repairs the identity's role assignment and IDs in Azure
+- Why: az CLI validates --subscription against discovered subscriptions; the failure is an Azure access problem a commit cannot fix
+- Who: You chose

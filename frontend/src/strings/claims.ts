@@ -26,6 +26,9 @@ export const claimStrings = {
   followUp: "Follow-up question",
   followUpFallback:
     "Please describe the affected part, the symptoms and when they started, then submit a new claim.",
+  answerLabel: "Your answer",
+  answerSubmit: "Submit answer",
+  answerRequired: "Enter an answer before submitting.",
   pickerLabel: "Which coverage level applies?",
   reevaluate: "Evaluate again",
   reevaluating: "Evaluating…",

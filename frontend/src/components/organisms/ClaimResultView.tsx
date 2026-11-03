@@ -12,8 +12,9 @@ import Paper from "@mui/material/Paper";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import Skeleton from "@mui/material/Skeleton";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { evaluateClaim } from "@/api/claims";
+import { composeFollowUpClaim, evaluateClaim } from "@/api/claims";
 import { apiClient } from "@/api/client";
 import type { components } from "@/api/generated/schema";
 import { isClaimNotFound, readProblem } from "@/api/problem";
@@ -24,7 +25,7 @@ import { CitationsCard } from "@/components/molecules/CitationsCard";
 import { FieldError } from "@/components/molecules/FieldError";
 import { ItemsCard } from "@/components/molecules/ItemsCard";
 import { ResultCard } from "@/components/molecules/ResultCard";
-import { claimFieldIds } from "@/constants/claims";
+import { claimFieldIds, claimLimits } from "@/constants/claims";
 import { routes } from "@/constants/routes";
 import { testIds } from "@/constants/testIds";
 import { claimErrorStrings, claimStrings } from "@/strings/claims";
@@ -44,6 +45,8 @@ export function ClaimResultView({ contractId, claimId }: Props) {
   const [level, setLevel] = useState("");
   const [busy, setBusy] = useState(false);
   const [reError, setReError] = useState<string | null>(null);
+  const [answer, setAnswer] = useState("");
+  const [answerError, setAnswerError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -138,6 +141,34 @@ export function ClaimResultView({ contractId, claimId }: Props) {
     setBusy(false);
   }
 
+  async function submitAnswer() {
+    if (busy || !followUpText) return;
+    if (!answer.trim()) {
+      setAnswerError(claimStrings.answerRequired);
+      return;
+    }
+    setBusy(true);
+    setAnswerError(null);
+    const composed = composeFollowUpClaim(
+      claim.claimText,
+      followUpText,
+      answer,
+    );
+    const outcome = await evaluateClaim(
+      contractId,
+      composed,
+      claim.coverageLevelRequested ?? null,
+    );
+    if (outcome.ok) {
+      router.push(routes.claimDetail(contractId, outcome.claimId));
+      setBusy(false);
+      setAnswer("");
+      return;
+    }
+    setAnswerError(outcome.message);
+    setBusy(false);
+  }
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       <Box>{back}</Box>
@@ -205,6 +236,59 @@ export function ClaimResultView({ contractId, claimId }: Props) {
               </Typography>
               {followUpText}
             </Alert>
+          ) : null}
+          {followUpText && !result.needsCoverageLevel ? (
+            <Paper variant="outlined" sx={{ p: 2 }} aria-busy={busy}>
+              <TextField
+                id={claimFieldIds.answer}
+                label={claimStrings.answerLabel}
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
+                multiline
+                minRows={3}
+                fullWidth
+                required
+                disabled={busy}
+                error={Boolean(answerError)}
+                helperText={claimStrings.counter(
+                  answer.length,
+                  claimLimits.answerMax,
+                )}
+                slotProps={{
+                  htmlInput: {
+                    maxLength: claimLimits.answerMax,
+                    "aria-describedby": answerError
+                      ? `${claimFieldIds.answerError} ${claimFieldIds.answerHelp}`
+                      : claimFieldIds.answerHelp,
+                    "data-testid": testIds.claimFollowUpAnswer,
+                  },
+                  formHelperText: { id: claimFieldIds.answerHelp },
+                }}
+              />
+              <FieldError
+                id={claimFieldIds.answerError}
+                message={answerError}
+                testId={testIds.claimFollowUpError}
+              />
+              <Box sx={{ mt: 1 }}>
+                <Button
+                  variant="contained"
+                  onClick={submitAnswer}
+                  disabled={busy}
+                  aria-busy={busy}
+                  data-testid={testIds.claimFollowUpSubmit}
+                >
+                  {busy ? claimStrings.reevaluating : claimStrings.answerSubmit}
+                </Button>
+              </Box>
+              <div role="status">
+                {busy ? (
+                  <Typography color="text.secondary">
+                    {claimStrings.waitNote}
+                  </Typography>
+                ) : null}
+              </div>
+            </Paper>
           ) : null}
           {result.needsCoverageLevel ? (
             <Paper variant="outlined" sx={{ p: 2 }} aria-busy={busy}>
