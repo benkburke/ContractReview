@@ -106,7 +106,7 @@ The `https` profile (`backend/src/ContractReview.Api/Properties/launchSettings.j
 
 The `http` profile listens on `http://localhost:5080`, which matches the frontend default, so a plain `dotnet run --project src/ContractReview.Api` works with no extra flags.
 
-- Swagger UI: `https://localhost:7080/swagger` (Development only).
+- Swagger UI: `https://localhost:7080/swagger` (enabled by default in Development).
 - Health: `/health` on the API host, for example `https://localhost:7080/health`. It includes a database check, so LocalDB must be running or the endpoint reports unhealthy.
 - API reference: `docs/api.md`.
 
@@ -170,6 +170,12 @@ Do not bypass this failure with `allow-no-subscriptions`: tenant-only login does
 - Open the app's actual **Default domain**. A generated hostname suffix is not a deployment slot; a portal link containing `/slots/<hostname-suffix>` can return "Resource not found" even when the app exists.
 - Set the GitHub `production` variable `NEXT_PUBLIC_API_URL` to the complete API origin, including `https://`, without an `/api` suffix. Rebuild and redeploy the frontend after changing it; the value is embedded during the build. A bare hostname is treated as a relative browser URL and sends requests to the frontend instead.
 - Configure the API's SQL connection as an App Service connection string named `AppDb` (SQLAzure type), or as the app setting `ConnectionStrings__AppDb`. A connection named after the SQL server is not the key the API reads. Never paste connection-string values into logs or issue reports.
+
+### Production Swagger
+
+The production API enables Swagger through the App Service setting `Swagger__Enabled=true`. It serves Swagger UI at `/swagger` and the OpenAPI document at `/openapi/v1.json`. The setting survives app deployments; restart the API after changing it. Set it to `false` to disable both routes.
+
+This is an explicit production opt-in: the project has no authentication, so the documentation and Swagger's interactive API calls are publicly accessible. The published configuration remains disabled by default.
 
 ## Notes
 
