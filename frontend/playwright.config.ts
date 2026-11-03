@@ -32,6 +32,7 @@ export default defineConfig({
     {
       command: webCommand,
       url: WEB_URL,
+      env: { NEXT_PUBLIC_API_URL: API_URL },
       reuseExistingServer: !process.env.CI,
       timeout: 180_000,
     },
