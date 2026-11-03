@@ -28,4 +28,4 @@
 
 ## Tooling
 - ESLint CLI with flat `eslint.config.mjs` (`eslint-config-next/core-web-vitals` + `/typescript` + Prettier with `endOfLine: "lf"`); `next lint` no longer exists. Add `"react/jsx-no-literals": ["error", { noStrings: true, ignoreProps: true }]` for `src/app/**` and `src/components/**` (the React plugin ships with `eslint-config-next`).
-- Scripts: `lint` = `eslint . --quiet`, `typecheck` = `tsc --noEmit`, `test` = `vitest run --passWithNoTests`, `e2e` = `playwright test --pass-with-no-tests` (both so a freshly bootstrapped app with no tests yet still verifies), `gen:api` = `openapi-typescript ../backend/openapi/openapi.json -o src/api/generated/schema.d.ts`.
+- Scripts: `lint` = `eslint . --quiet`, `typecheck` = `next typegen && tsc --noEmit` (generate route types before checking a clean checkout), `test` = `vitest run --passWithNoTests`, `e2e` = `playwright test --pass-with-no-tests` (both so a freshly bootstrapped app with no tests yet still verifies), `gen:api` = `openapi-typescript ../backend/openapi/openapi.json -o src/api/generated/schema.d.ts`.

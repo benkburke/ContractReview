@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --quiet",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "e2e": "playwright test --pass-with-no-tests",
     "gen:api": "openapi-typescript ../backend/openapi/openapi.json -o src/api/generated/schema.d.ts"
