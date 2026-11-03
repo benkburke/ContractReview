@@ -1,7 +1,3 @@
-using System.Net;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Text.Json;
 using ContractReview.Application.Abstractions.Chat;
 using ContractReview.Application.Options;
 using ContractReview.Infrastructure.Embeddings;
@@ -46,7 +42,7 @@ public sealed class OpenRouterChatClient(
         var request = ChatWire.BuildRequest(settings.ChatModel, prompt);
         for (var attempt = 0; ; attempt++)
         {
-            var content = await SendAsync(request, settings, cancellationToken);
+            var content = await OpenRouterChatTransport.SendAsync(http, request, settings, clock, logger, cancellationToken);
             if (ChatWire.ParseAnswer(content, out var failureReason) is { } answer)
             {
                 return answer;
@@ -59,95 +55,5 @@ public sealed class OpenRouterChatClient(
                 throw new ChatFailedException(ChatFailureReasons.MalformedOutput);
             }
         }
-    }
-
-    /// <summary>One logical request with transient-failure retries; returns the message content, or null when absent or unreadable.</summary>
-    private async Task<string?> SendAsync(ChatRequest request, OpenRouterOptions settings, CancellationToken cancellationToken)
-    {
-        for (var attempt = 0; ; attempt++)
-        {
-            var canRetry = attempt < settings.MaxRetries;
-            HttpResponseMessage response;
-            try
-            {
-                using var message = new HttpRequestMessage(HttpMethod.Post, OpenRouterApi.ChatCompletionsPath)
-                {
-                    Content = JsonContent.Create(request, options: ChatWire.Json),
-                };
-                message.Headers.Authorization = new AuthenticationHeaderValue(OpenRouterApi.BearerScheme, settings.ApiKey);
-                response = await http.SendAsync(message, cancellationToken);
-            }
-            catch (HttpRequestException ex)
-            {
-                logger.LogWarning(ex, "OpenRouter chat request failed (attempt {Attempt})", attempt + 1);
-                if (!canRetry)
-                {
-                    throw new ChatFailedException(ChatFailureReasons.TransportError, ex);
-                }
-
-                await DelayAsync(settings, attempt, null, cancellationToken);
-                continue;
-            }
-            catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
-            {
-                logger.LogWarning("OpenRouter chat request timed out (attempt {Attempt})", attempt + 1);
-                if (!canRetry)
-                {
-                    throw new ChatFailedException(ChatFailureReasons.Timeout, ex);
-                }
-
-                await DelayAsync(settings, attempt, null, cancellationToken);
-                continue;
-            }
-
-            using (response)
-            {
-                if (response.IsSuccessStatusCode)
-                {
-                    return await ReadContentAsync(response, cancellationToken);
-                }
-
-                var transient = response.StatusCode == HttpStatusCode.TooManyRequests
-                    || response.StatusCode >= HttpStatusCode.InternalServerError;
-                logger.LogWarning(
-                    "OpenRouter chat returned {StatusCode} (attempt {Attempt})", (int)response.StatusCode, attempt + 1);
-                if (!transient || !canRetry)
-                {
-                    throw new ChatFailedException(ChatFailureReasons.HttpError);
-                }
-
-                await DelayAsync(settings, attempt, response.Headers.RetryAfter, cancellationToken);
-            }
-        }
-    }
-
-    private static async Task<string?> ReadContentAsync(HttpResponseMessage response, CancellationToken cancellationToken)
-    {
-        try
-        {
-            var body = await response.Content.ReadFromJsonAsync<ChatResponse>(ChatWire.Json, cancellationToken);
-            return body?.Choices?.FirstOrDefault()?.Message?.Content;
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
-        {
-            throw new ChatFailedException(ChatFailureReasons.Timeout);
-        }
-    }
-
-    private Task DelayAsync(
-        OpenRouterOptions settings, int attempt, RetryConditionHeaderValue? retryAfter, CancellationToken cancellationToken)
-    {
-        var delay = retryAfter?.Delta
-            ?? TimeSpan.FromMilliseconds(settings.RetryDelayMilliseconds * Math.Pow(2, attempt));
-        if (delay > OpenRouterEmbeddingClient.MaxRetryAfter)
-        {
-            delay = OpenRouterEmbeddingClient.MaxRetryAfter;
-        }
-
-        return Task.Delay(delay, clock, cancellationToken);
     }
 }

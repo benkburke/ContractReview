@@ -10,6 +10,7 @@ public sealed class OpenRouterOptions
     public const string DefaultBaseUrl = "https://openrouter.ai/api/v1";
     public const string DefaultEmbeddingModel = "openai/text-embedding-3-small";
     public const string DefaultChatModel = "openai/gpt-4o-mini";
+    public const string DefaultReviewModel = "anthropic/claude-haiku-4.5";
     public const int DefaultTimeoutSeconds = 30;
     public const int DefaultMaxRetries = 2;
     public const int DefaultRetryDelayMilliseconds = 1000;
@@ -26,6 +27,11 @@ public sealed class OpenRouterOptions
     [Required]
     [MaxLength(ClaimRules.MaxModelLength)]
     public string ChatModel { get; init; } = DefaultChatModel;
+
+    /// <summary>The model that reviews the primary answer; a different model for independent verification (D-042).</summary>
+    [Required]
+    [MaxLength(ClaimRules.MaxModelLength)]
+    public string ReviewModel { get; init; } = DefaultReviewModel;
 
     /// <summary>From user-secrets or the <c>OpenRouter__ApiKey</c> env var only. Missing: indexing fails, the app still starts.</summary>
     public string? ApiKey { get; init; }

@@ -68,6 +68,30 @@ namespace ContractReview.Infrastructure.Migrations
                     b.Property<string>("ResultJson")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool?>("ReviewAgrees")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("ReviewConfidence")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReviewErrorCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool?>("ReviewIsCovered")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ReviewJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReviewModel")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ReviewState")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("State")
                         .IsRequired()
                         .HasMaxLength(20)

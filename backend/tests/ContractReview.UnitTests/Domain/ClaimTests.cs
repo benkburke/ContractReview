@@ -144,4 +144,90 @@ public class ClaimTests
         Assert.Equal(DomainErrorKind.Conflict, Assert.Throws<DomainException>(() => claim.Fail(ErrorCodes.ClaimEvaluationFailed, Now)).Kind);
         Assert.Throws<DomainException>(() => claim.Complete(Result(), Now));
     }
+
+    private static ClaimReview CompletedReview(bool agrees = true) =>
+        ClaimReview.Completed(agrees, true, 70, "Because.", ["Radiator"], ["Tires"], "review-model");
+
+    [Fact]
+    public void AttachReview_stores_the_review_and_round_trips_through_the_columns()
+    {
+        var claim = Start();
+        claim.Complete(Result(), Now);
+
+        claim.AttachReview(CompletedReview(agrees: false));
+
+        var review = claim.Review;
+        Assert.NotNull(review);
+        Assert.Equal(ReviewState.Completed, review.State);
+        Assert.False(review.AgreesWithPrimary);
+        Assert.Equal(70, review.Confidence);
+        Assert.Equal("Because.", review.AccuracyExplanation);
+        Assert.Equal(["Radiator"], review.CoveredItems);
+        Assert.Equal(["Tires"], review.NotCoveredItems);
+        Assert.Equal("review-model", review.Model);
+    }
+
+    [Fact]
+    public void ReviewFailed_stores_only_the_error_code()
+    {
+        var claim = Start();
+        claim.Complete(Result(), Now);
+
+        claim.ReviewFailed(ErrorCodes.ReviewFailed);
+
+        Assert.Equal(ReviewState.Failed, claim.Review?.State);
+        Assert.Equal(ErrorCodes.ReviewFailed, claim.Review?.ErrorCode);
+        Assert.Null(claim.Review?.AgreesWithPrimary);
+    }
+
+    [Fact]
+    public void A_review_is_only_allowed_once_the_claim_is_evaluated()
+    {
+        var evaluating = Start();
+        Assert.Equal(DomainErrorKind.Conflict, Assert.Throws<DomainException>(() => evaluating.AttachReview(CompletedReview())).Kind);
+
+        var failed = Start();
+        failed.Fail(ErrorCodes.ClaimEvaluationFailed, Now);
+        Assert.Throws<DomainException>(() => failed.ReviewFailed(ErrorCodes.ReviewFailed));
+    }
+
+    [Fact]
+    public void A_review_is_only_allowed_once()
+    {
+        var claim = Start();
+        claim.Complete(Result(), Now);
+        claim.AttachReview(CompletedReview());
+
+        Assert.Throws<DomainException>(() => claim.AttachReview(CompletedReview()));
+        Assert.Throws<DomainException>(() => claim.ReviewFailed(ErrorCodes.ReviewFailed));
+    }
+
+    [Fact]
+    public void A_claim_without_a_review_has_none()
+    {
+        var claim = Start();
+        claim.Complete(Result(), Now);
+
+        Assert.Null(claim.Review);
+    }
+
+    [Theory]
+    [InlineData(-1, 5)]
+    [InlineData(101, 5)]
+    [InlineData(50, ClaimRules.MaxReviewExplanationLength + 1)]
+    [InlineData(50, 0)]
+    public void Completed_review_rejects_values_over_the_limits(int confidence, int explanationLength)
+    {
+        Assert.Throws<DomainException>(() =>
+            ClaimReview.Completed(true, true, confidence, new string('a', explanationLength), [], [], "m"));
+    }
+
+    [Fact]
+    public void Completed_review_rejects_too_many_or_too_long_items()
+    {
+        var tooMany = Enumerable.Repeat("x", ClaimRules.MaxReviewItems + 1).ToList();
+        Assert.Throws<DomainException>(() => ClaimReview.Completed(true, true, 50, "e", tooMany, [], "m"));
+        Assert.Throws<DomainException>(() =>
+            ClaimReview.Completed(true, true, 50, "e", [], [new string('x', ClaimRules.MaxItemLength + 1)], "m"));
+    }
 }

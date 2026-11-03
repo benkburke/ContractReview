@@ -96,7 +96,7 @@ public class ClaimProgressHubTests(ApiFactory factory)
         lock (myEvents)
         {
             Assert.Equal(
-                [ClaimProgressStep.Retrieving, ClaimProgressStep.Reasoning, ClaimProgressStep.Completed],
+                [ClaimProgressStep.Retrieving, ClaimProgressStep.Reasoning, ClaimProgressStep.Reviewing, ClaimProgressStep.Completed],
                 myEvents.Select(e => e.Step).ToArray());
             Assert.All(myEvents, e => Assert.Equal(contractId, e.ContractId));
             Assert.Equal(claimId, myEvents[^1].ClaimId);

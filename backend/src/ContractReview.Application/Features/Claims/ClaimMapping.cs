@@ -17,6 +17,17 @@ public static class ClaimMapping
         result.Citations.Select(c => new ClaimCitationDto(c.SectionHeading, c.Excerpt)).ToList(),
         result.Model);
 
+    public static ClaimReviewDto ToDto(ClaimReview review) => new(
+        review.State == ReviewState.Completed ? ClaimReviewState.Completed : ClaimReviewState.Failed,
+        review.AgreesWithPrimary,
+        review.IsCovered,
+        review.Confidence,
+        review.AccuracyExplanation,
+        review.CoveredItems,
+        review.NotCoveredItems,
+        review.Model,
+        review.ErrorCode);
+
     /// <summary>Maps a finished claim (Evaluated or Failed) to its DTO.</summary>
     public static ClaimEvaluationDto ToDto(Claim claim) => new(
         claim.Id,
@@ -26,5 +37,6 @@ public static class ClaimMapping
         claim.State ?? ClaimState.Failed,
         claim.CreatedAtUtc,
         claim.Result is { } result ? ToDto(result) : null,
-        claim.ErrorCode);
+        claim.ErrorCode,
+        claim.Review is { } review ? ToDto(review) : null);
 }

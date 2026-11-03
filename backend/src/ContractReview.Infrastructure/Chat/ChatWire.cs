@@ -77,18 +77,18 @@ internal static class ChatWire
     /// <summary>Logged reason when the content is empty, not JSON, or does not have the schema's shape.</summary>
     public const string ReasonNotJsonOfSchema = "content is not valid JSON of the schema";
 
-    private const string KeyType = "type";
-    private const string KeyAdditionalProperties = "additionalProperties";
-    private const string KeyRequired = "required";
-    private const string KeyProperties = "properties";
-    private const string KeyEnum = "enum";
-    private const string KeyItems = "items";
-    private const string TypeObject = "object";
-    private const string TypeString = "string";
-    private const string TypeInteger = "integer";
-    private const string TypeBoolean = "boolean";
-    private const string TypeArray = "array";
-    private const string TypeNull = "null";
+    internal const string KeyType = "type";
+    internal const string KeyAdditionalProperties = "additionalProperties";
+    internal const string KeyRequired = "required";
+    internal const string KeyProperties = "properties";
+    internal const string KeyEnum = "enum";
+    internal const string KeyItems = "items";
+    internal const string TypeObject = "object";
+    internal const string TypeString = "string";
+    internal const string TypeInteger = "integer";
+    internal const string TypeBoolean = "boolean";
+    internal const string TypeArray = "array";
+    internal const string TypeNull = "null";
 
     public static ChatRequest BuildRequest(string model, ClaimPrompt prompt) => new(
         model,
@@ -185,14 +185,14 @@ internal static class ChatWire
         Name(nameof(ChatAnswerWire.Citations)),
     ];
 
-    private static string Name(string property) => JsonNamingPolicy.CamelCase.ConvertName(property);
+    internal static string Name(string property) => JsonNamingPolicy.CamelCase.ConvertName(property);
 
-    private static JsonObject Nullable(string type) => new()
+    internal static JsonObject Nullable(string type) => new()
     {
         [KeyType] = new JsonArray((JsonNode)JsonValue.Create(type)!, JsonValue.Create(TypeNull)!),
     };
 
-    private static JsonObject StringArray() => new()
+    internal static JsonObject StringArray() => new()
     {
         [KeyType] = TypeArray,
         [KeyItems] = new JsonObject { [KeyType] = TypeString },

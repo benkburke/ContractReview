@@ -403,6 +403,16 @@
               "null",
               "string"
             ]
+          },
+          "review": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ClaimReviewDto"
+              }
+            ]
           }
         }
       },
@@ -479,6 +489,82 @@
             "type": "string"
           }
         }
+      },
+      "ClaimReviewDto": {
+        "required": [
+          "state",
+          "agreesWithPrimary",
+          "isCovered",
+          "confidence",
+          "accuracyExplanation",
+          "coveredItems",
+          "notCoveredItems",
+          "model",
+          "errorCode"
+        ],
+        "type": "object",
+        "properties": {
+          "state": {
+            "$ref": "#/components/schemas/ClaimReviewState"
+          },
+          "agreesWithPrimary": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "isCovered": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "confidence": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "accuracyExplanation": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "coveredItems": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "notCoveredItems": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "model": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "errorCode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ClaimReviewState": {
+        "enum": [
+          "Completed",
+          "Failed"
+        ]
       },
       "ClaimState": {
         "enum": [

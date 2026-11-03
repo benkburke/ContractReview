@@ -32,6 +32,13 @@ public sealed class GetClaimHandler(IAppDbContext db) : IQueryHandler<GetClaimQu
                 c.NeedsCoverageLevel,
                 c.ResultJson,
                 c.Model,
+                c.ReviewState,
+                c.ReviewAgrees,
+                c.ReviewIsCovered,
+                c.ReviewConfidence,
+                c.ReviewJson,
+                c.ReviewModel,
+                c.ReviewErrorCode,
             })
             .FirstOrDefaultAsync(cancellationToken);
         if (row is null)
@@ -46,6 +53,8 @@ public sealed class GetClaimHandler(IAppDbContext db) : IQueryHandler<GetClaimQu
             ? ClaimEvaluationResult.FromStored(
                 status, confidence, row.CoverageLevel, row.NeedsCoverageLevel, row.Model, row.ResultJson)
             : null;
+        var review = ClaimReview.FromStored(
+            row.ReviewState, row.ReviewAgrees, row.ReviewIsCovered, row.ReviewConfidence, row.ReviewModel, row.ReviewErrorCode, row.ReviewJson);
         return new ClaimEvaluationDto(
             row.Id,
             row.ContractId,
@@ -54,6 +63,7 @@ public sealed class GetClaimHandler(IAppDbContext db) : IQueryHandler<GetClaimQu
             row.State ?? ClaimState.Failed,
             row.CreatedAtUtc,
             result is null ? null : ClaimMapping.ToDto(result),
-            row.ErrorCode);
+            row.ErrorCode,
+            review is null ? null : ClaimMapping.ToDto(review));
     }
 }

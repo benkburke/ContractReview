@@ -82,6 +82,11 @@ Claim settings, all in `backend/src/ContractReview.Api/appsettings.json` unless 
 | `Claims:TopK` | `8` | Chunks retrieved per claim, range 1 to 20. |
 | `Claims:MaxContextChars` | `12000` | Prompt budget for retrieved chunks, range 1,000 to 50,000. Lowest-ranked chunks are dropped to fit. |
 | `Claims:ChatTimeoutSeconds` | `60` | Timeout per chat request, range 5 to 300. |
+| `OpenRouter:ReviewModel` | `anthropic/claude-haiku-4.5` | Separate model for the independent second-pass review (D-042). Uses the same `OpenRouter:ApiKey`. |
+| `Review:Enabled` | `true` | Set to `false` to skip the review. |
+| `Review:TimeoutSeconds` | `45` | Timeout for the review call, range 5 to 300. A failed review does not fail the claim. |
+
+Tests and e2e: with `Llm:Provider` set to `Fake`, the fake reviewer agrees by default. A claim text containing `disputed` makes it disagree, and one containing `unreviewable` makes the review fail.
 
 Manual demo check (optional): place the sample Allstate VSC PDF in the git-ignored `samples/` folder at the repository root, for example `samples/allstate-vsc.pdf`. Create the folder if it does not exist:
 
@@ -201,6 +206,8 @@ Set these on the **API** App Service (`contractreview-api`) under **Settings > E
 | `OpenRouter__ApiKey` | Yes | OpenRouter API key. Without it, uploads fail with "The embedding service could not index this contract" (502 `contract.embedding_failed`), and claims fail with 502 `claim.evaluation_failed`. |
 | `OpenRouter__EmbeddingModel` | No | Defaults to `openai/text-embedding-3-small`. |
 | `OpenRouter__ChatModel` | No | Defaults to `openai/gpt-4o-mini`. |
+| `OpenRouter__ReviewModel` | No | Defaults to `anthropic/claude-haiku-4.5`. |
+| `Review__Enabled` | No | Defaults to `true`. Set `false` to skip the second-pass review. |
 
 Never set `Embeddings__Provider` or `Llm__Provider` to `Fake` in production. `Fake` selects the deterministic test clients (D-028).
 

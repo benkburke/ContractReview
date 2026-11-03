@@ -45,7 +45,26 @@ public sealed class Claim
 
     public string? Model { get; private set; }
 
+    // Stored columns of the second-pass review; use Review to read them as one value object. All null when not reviewed.
+    public ReviewState? ReviewState { get; private set; }
+
+    public bool? ReviewAgrees { get; private set; }
+
+    public bool? ReviewIsCovered { get; private set; }
+
+    public int? ReviewConfidence { get; private set; }
+
+    /// <summary>Explanation and item lists of the review as JSON.</summary>
+    public string? ReviewJson { get; private set; }
+
+    public string? ReviewModel { get; private set; }
+
+    public string? ReviewErrorCode { get; private set; }
+
     public bool IsEvaluating => State is null;
+
+    public ClaimReview? Review =>
+        ClaimReview.FromStored(ReviewState, ReviewAgrees, ReviewIsCovered, ReviewConfidence, ReviewModel, ReviewErrorCode, ReviewJson);
 
     public ClaimEvaluationResult? Result =>
         Status is { } status && Confidence is { } confidence && ResultJson is not null && Model is not null
@@ -117,6 +136,40 @@ public sealed class Claim
         ErrorCode = errorCode;
         State = ClaimState.Failed;
         CompletedAtUtc = completedAtUtc;
+    }
+
+    /// <summary>Stores a completed second-pass review. Only allowed once the claim is Evaluated and has no review yet.</summary>
+    public void AttachReview(ClaimReview review)
+    {
+        EnsureCanReview();
+        if (review.State != Claims.ReviewState.Completed)
+        {
+            throw new DomainException(ErrorCodes.DomainRuleViolated, ErrorMessages.DomainRuleViolated);
+        }
+
+        ReviewState = review.State;
+        ReviewAgrees = review.AgreesWithPrimary;
+        ReviewIsCovered = review.IsCovered;
+        ReviewConfidence = review.Confidence;
+        ReviewJson = review.ToDetailsJson();
+        ReviewModel = review.Model;
+    }
+
+    /// <summary>Records that the review could not be produced, with an error code. Same rules as <see cref="AttachReview"/>.</summary>
+    public void ReviewFailed(string errorCode)
+    {
+        EnsureCanReview();
+        var failed = ClaimReview.Failed(errorCode);
+        ReviewState = failed.State;
+        ReviewErrorCode = failed.ErrorCode;
+    }
+
+    private void EnsureCanReview()
+    {
+        if (State != ClaimState.Evaluated || ReviewState is not null)
+        {
+            throw new DomainException(ErrorCodes.Conflict, ErrorMessages.Conflict, DomainErrorKind.Conflict);
+        }
     }
 
     private void EnsureEvaluating()

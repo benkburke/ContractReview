@@ -34,7 +34,15 @@ public sealed class ClaimConfiguration : IEntityTypeConfiguration<Claim>
         builder.Property(c => c.NeedsCoverageLevel).HasDefaultValue(false).IsRequired();
         builder.Property(c => c.ResultJson).HasColumnType("nvarchar(max)");
         builder.Property(c => c.Model).HasMaxLength(ClaimRules.MaxModelLength);
+        builder.Property(c => c.ReviewState).HasConversion<string>().HasMaxLength(ClaimRules.MaxReviewStateLength);
+        builder.Property(c => c.ReviewAgrees);
+        builder.Property(c => c.ReviewIsCovered);
+        builder.Property(c => c.ReviewConfidence);
+        builder.Property(c => c.ReviewJson).HasColumnType("nvarchar(max)");
+        builder.Property(c => c.ReviewModel).HasMaxLength(ClaimRules.MaxModelLength);
+        builder.Property(c => c.ReviewErrorCode).HasMaxLength(ClaimRules.MaxErrorCodeLength);
         builder.Ignore(c => c.Result);
+        builder.Ignore(c => c.Review);
         builder.Ignore(c => c.IsEvaluating);
         builder.HasIndex(c => new { c.ContractId, c.CreatedAtUtc });
 

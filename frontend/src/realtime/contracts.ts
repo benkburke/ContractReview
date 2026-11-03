@@ -4,6 +4,7 @@ import { hubMethods } from "@/constants/realtime";
 export const claimProgressSteps = {
   retrieving: "Retrieving",
   reasoning: "Reasoning",
+  reviewing: "Reviewing",
   completed: "Completed",
   failed: "Failed",
 } as const;

@@ -19,4 +19,5 @@ public static class ErrorCodes
     public const string ClaimCoverageLevelInvalid = "claim.coverage_level_invalid";
     public const string ClaimNotFound = "claim.not_found";
     public const string ClaimEvaluationFailed = "claim.evaluation_failed";
+    public const string ReviewFailed = "review.failed";
 }

@@ -2,6 +2,7 @@ using ContractReview.Application.Abstractions.Embeddings;
 using ContractReview.Application.Abstractions.Pdf;
 using ContractReview.Application.Abstractions.Persistence;
 using ContractReview.Application.Abstractions.Chat;
+using ContractReview.Application.Features.Claims.Evaluation;
 using ContractReview.Application.Options;
 using ContractReview.Infrastructure.Chat;
 using ContractReview.Infrastructure.Embeddings;
@@ -65,11 +66,18 @@ public static class DependencyInjection
                 sp.GetRequiredService<IOptions<OpenRouterOptions>>().Value,
                 sp.GetRequiredService<IOptions<ClaimsOptions>>().Value));
         services.AddSingleton<FakeChatClient>();
+        services.AddHttpClient<OpenRouterClaimReviewer>((sp, client) =>
+            OpenRouterClaimReviewer.Configure(client, sp.GetRequiredService<IOptions<OpenRouterOptions>>().Value));
+        services.AddSingleton<FakeClaimReviewer>();
 
         // Chosen per resolve from options so test hosts can switch provider through configuration (D-028).
         services.AddScoped<IChatCompletionClient>(sp =>
             sp.GetRequiredService<IOptions<LlmOptions>>().Value.Provider == LlmProvider.Fake
                 ? sp.GetRequiredService<FakeChatClient>()
                 : sp.GetRequiredService<OpenRouterChatClient>());
+        services.AddScoped<IClaimReviewer>(sp =>
+            sp.GetRequiredService<IOptions<LlmOptions>>().Value.Provider == LlmProvider.Fake
+                ? sp.GetRequiredService<FakeClaimReviewer>()
+                : sp.GetRequiredService<OpenRouterClaimReviewer>());
     }
 }

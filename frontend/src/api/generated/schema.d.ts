@@ -104,6 +104,7 @@ export interface components {
             createdAtUtc: string;
             result: null | components["schemas"]["ClaimEvaluationResultDto"];
             errorCode: null | string;
+            review?: null | components["schemas"]["ClaimReviewDto"];
         };
         ClaimEvaluationResultDto: {
             status: components["schemas"]["ClaimStatus"];
@@ -119,6 +120,20 @@ export interface components {
             citations: components["schemas"]["ClaimCitationDto"][];
             model: string;
         };
+        ClaimReviewDto: {
+            state: components["schemas"]["ClaimReviewState"];
+            agreesWithPrimary: null | boolean;
+            isCovered: null | boolean;
+            /** Format: int32 */
+            confidence: null | number | string;
+            accuracyExplanation: null | string;
+            coveredItems: string[];
+            notCoveredItems: string[];
+            model: null | string;
+            errorCode: null | string;
+        };
+        /** @enum {unknown} */
+        ClaimReviewState: "Completed" | "Failed";
         /** @enum {unknown} */
         ClaimState: "Evaluated" | "Failed";
         /** @enum {unknown} */

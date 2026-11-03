@@ -18,6 +18,9 @@ public static class ClaimRules
     public const int MaxReasoningLength = 4000;
     public const int MaxFollowUpQuestionLength = 500;
     public const int MaxExcerptLength = 500;
+    public const int MaxReviewExplanationLength = 2000;
+    public const int MaxReviewItems = 20;
+    public const int MaxReviewStateLength = 20;
 
     public const int MaxStateLength = 20;
     public const int MaxStatusLength = 30;

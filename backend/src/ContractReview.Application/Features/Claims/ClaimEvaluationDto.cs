@@ -10,4 +10,5 @@ public sealed record ClaimEvaluationDto(
     ClaimState State,
     DateTime CreatedAtUtc,
     ClaimEvaluationResultDto? Result,
-    string? ErrorCode);
+    string? ErrorCode,
+    ClaimReviewDto? Review = null);

@@ -39,6 +39,11 @@ builder.Services.AddOptions<ClaimsOptions>()
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
+builder.Services.AddOptions<ReviewOptions>()
+    .BindConfiguration(ReviewOptions.SectionName)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<IClaimProgressNotifier, SignalRClaimProgressNotifier>();
 builder.Services.AddApplication();

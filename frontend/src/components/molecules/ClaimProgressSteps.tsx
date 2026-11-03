@@ -8,11 +8,12 @@ import {
 } from "@/realtime/contracts";
 import { claimProgressStrings } from "@/strings/claims";
 
-const finalIndex = 2;
+const finalIndex = 3;
 
 function indexOf(step: ClaimProgressStep): number {
   if (step === claimProgressSteps.retrieving) return 0;
   if (step === claimProgressSteps.reasoning) return 1;
+  if (step === claimProgressSteps.reviewing) return 2;
   return finalIndex;
 }
 
@@ -21,22 +22,23 @@ type ItemState = "done" | "current" | "pending" | "failed";
 function itemStates(seen: readonly ClaimProgressStep[]): ItemState[] {
   const latest = seen[seen.length - 1];
   if (latest === claimProgressSteps.completed) {
-    return ["done", "done", "done"];
+    return ["done", "done", "done", "done"];
   }
   if (latest === claimProgressSteps.failed) {
     const working = seen.filter(
       (s) =>
         s === claimProgressSteps.retrieving ||
-        s === claimProgressSteps.reasoning,
+        s === claimProgressSteps.reasoning ||
+        s === claimProgressSteps.reviewing,
     );
     const failedAt = working.length ? indexOf(working[working.length - 1]) : 0;
-    return [0, 1, finalIndex].map((i): ItemState => {
+    return [0, 1, 2, finalIndex].map((i): ItemState => {
       if (i === finalIndex) return "failed";
       return i < failedAt ? "done" : "failed";
     });
   }
   const active = indexOf(latest);
-  return [0, 1, finalIndex].map((i): ItemState =>
+  return [0, 1, 2, finalIndex].map((i): ItemState =>
     i < active ? "done" : i === active ? "current" : "pending",
   );
 }
@@ -60,6 +62,7 @@ export function ClaimProgressSteps({
   const labels = [
     claimProgressStrings.retrieving,
     claimProgressStrings.reasoning,
+    claimProgressStrings.reviewing,
     failed ? claimProgressStrings.failed : claimProgressStrings.done,
   ];
   const activeStep = states.findIndex((s) => s === "current" || s === "failed");

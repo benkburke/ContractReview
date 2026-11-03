@@ -1,5 +1,5 @@
 # Second-pass evaluator
-Status: approved 2026-11-02
+Status: done 2026-11-02
 Roadmap: D1 (depth)
 
 ## Context

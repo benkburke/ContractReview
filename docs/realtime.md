@@ -6,7 +6,7 @@ Hub: `/hubs/claim-progress` (anonymous, no authentication). The hub has no clien
 
 | Event | Payload | Notes |
 |-------|---------|-------|
-| `EvaluationProgress` | `{ contractId, step, occurredAtUtc, claimId, errorCode }` | `step` is `Retrieving`, `Reasoning`, `Completed` or `Failed`. `claimId` is set on `Completed` and `Failed`. `errorCode` is set on `Failed`. |
+| `EvaluationProgress` | `{ contractId, step, occurredAtUtc, claimId, errorCode }` | `step` is `Retrieving`, `Reasoning`, `Reviewing`, `Completed` or `Failed`. `Reviewing` is sent between `Reasoning` and `Completed` only when a review runs. `claimId` is set on `Completed` and `Failed`. `errorCode` is set on `Failed`. |
 
 ### Opting in
 

@@ -2,6 +2,7 @@ using ContractReview.Application.Abstractions.Chat;
 using ContractReview.Application.Abstractions.Embeddings;
 using ContractReview.Application.Abstractions.Messaging;
 using ContractReview.Application.Abstractions.Persistence;
+using ContractReview.Application.Features.Claims.Evaluation;
 using ContractReview.Application.Features.Claims.Progress;
 using ContractReview.Application.Features.Claims.Retrieval;
 using ContractReview.Application.Options;
@@ -26,7 +27,9 @@ public sealed class EvaluateClaimHandler(
     IEmbeddingClient embeddings,
     IClaimRetriever retriever,
     IChatCompletionClient chat,
+    IClaimReviewer reviewer,
     IOptions<ClaimsOptions> options,
+    IOptions<ReviewOptions> reviewOptions,
     IClaimProgressNotifier notifier,
     TimeProvider clock,
     ILogger<EvaluateClaimHandler> logger) : ICommandHandler<EvaluateClaimCommand, ClaimEvaluationDto?>
@@ -61,9 +64,12 @@ public sealed class EvaluateClaimHandler(
                 DomainErrorKind.Conflict);
         }
 
+        ClaimPrompt prompt;
         try
         {
-            claim.Complete(await EvaluateAsync(claim, command.ProgressConnectionId, cancellationToken), UtcNow());
+            var (result, evaluatedPrompt) = await EvaluateAsync(claim, command.ProgressConnectionId, cancellationToken);
+            prompt = evaluatedPrompt;
+            claim.Complete(result, UtcNow());
         }
         catch (Exception ex) when (ex is EmbeddingFailedException or ChatFailedException or ClaimEvaluationFailedException or DomainException)
         {
@@ -75,6 +81,7 @@ public sealed class EvaluateClaimHandler(
             throw new ClaimEvaluationFailedException(ex);
         }
 
+        await ReviewAsync(claim, prompt, command.ProgressConnectionId, cancellationToken);
         db.Claims.Add(claim);
         await db.SaveChangesAsync(cancellationToken);
         logger.LogInformation(
@@ -83,7 +90,47 @@ public sealed class EvaluateClaimHandler(
         return ClaimMapping.ToDto(claim);
     }
 
-    private async Task<ClaimEvaluationResult> EvaluateAsync(
+    /// <summary>
+    /// Runs the second-pass review after a decisive primary result. A review failure is stored as Failed and never fails
+    /// the claim (spec AC4).
+    /// </summary>
+    private async Task ReviewAsync(Claim claim, ClaimPrompt prompt, string? connectionId, CancellationToken cancellationToken)
+    {
+        var primary = claim.Result;
+        if (!reviewOptions.Value.Enabled
+            || primary is null
+            || primary.Status == ClaimStatus.InsufficientInformation
+            || primary.NeedsCoverageLevel)
+        {
+            return;
+        }
+
+        await PushAsync(connectionId, claim, ClaimProgressStep.Reviewing);
+        try
+        {
+            var answer = await reviewer.ReviewAsync(prompt, primary, cancellationToken);
+            if (answer.FindViolation() is not null)
+            {
+                throw new ChatFailedException(ChatFailureReasons.MalformedOutput);
+            }
+
+            claim.AttachReview(ClaimReview.Completed(
+                answer.AgreesWithPrimary,
+                answer.IsCovered,
+                answer.Confidence,
+                answer.AccuracyExplanation,
+                answer.CoveredItems,
+                answer.NotCoveredItems,
+                reviewer.ModelName));
+        }
+        catch (Exception ex) when (ex is ChatFailedException or DomainException)
+        {
+            logger.LogWarning(ex, "Reviewing claim {ClaimId} for contract {ContractId} failed", claim.Id, claim.ContractId);
+            claim.ReviewFailed(ErrorCodes.ReviewFailed);
+        }
+    }
+
+    private async Task<(ClaimEvaluationResult Result, ClaimPrompt Prompt)> EvaluateAsync(
         Claim claim, string? connectionId, CancellationToken cancellationToken)
     {
         var settings = options.Value;
@@ -120,7 +167,7 @@ public sealed class EvaluateClaimHandler(
             throw new ChatFailedException(ChatFailureReasons.MalformedOutput);
         }
 
-        return ClaimEvaluationResult.Create(
+        var result = ClaimEvaluationResult.Create(
             answer.Status,
             answer.Confidence,
             answer.CoverageLevel ?? claim.CoverageLevelRequested,
@@ -132,6 +179,7 @@ public sealed class EvaluateClaimHandler(
             answer.FollowUpQuestion,
             ValidCitations(answer.CitedLabels, retrieved),
             chat.ModelName);
+        return (result, prompt);
     }
 
     /// <summary>Keeps only labels that were retrieved, once each, as citations with an excerpt of the stored chunk text.</summary>

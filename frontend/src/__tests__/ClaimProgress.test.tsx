@@ -165,13 +165,16 @@ describe("AskClaimForm live progress", () => {
     expect(
       within(region).getByText(claimProgressStrings.retrieving),
     ).toBeInTheDocument();
-    expect(states()).toEqual(["current", "pending", "pending"]);
+    expect(states()).toEqual(["current", "pending", "pending", "pending"]);
 
     push_(event(claimProgressSteps.reasoning));
-    expect(states()).toEqual(["done", "current", "pending"]);
+    expect(states()).toEqual(["done", "current", "pending", "pending"]);
+
+    push_(event(claimProgressSteps.reviewing));
+    expect(states()).toEqual(["done", "done", "current", "pending"]);
 
     push_(event(claimProgressSteps.completed));
-    expect(states()).toEqual(["done", "done", "done"]);
+    expect(states()).toEqual(["done", "done", "done", "done"]);
     expect(
       within(region).getByText(claimProgressStrings.done),
     ).toBeInTheDocument();
@@ -210,7 +213,7 @@ describe("AskClaimForm live progress", () => {
     expect(
       within(region).getByText(claimProgressStrings.failed),
     ).toBeInTheDocument();
-    expect(states()).toEqual(["done", "failed", "failed"]);
+    expect(states()).toEqual(["done", "failed", "failed", "failed"]);
   });
 
   it("still submits, with no header and no error, when the hub is down", async () => {

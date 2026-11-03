@@ -150,6 +150,7 @@ Returns a stored claim, including a `Failed` one. Operation id `GetClaim`. Use i
 | `createdAtUtc` | date-time | UTC. |
 | `result` | `ClaimEvaluationResultDto`, nullable | Null when `state` is `Failed`. |
 | `errorCode` | string, nullable | Set when `state` is `Failed`. |
+| `review` | `ClaimReviewDto`, nullable | Independent second-pass check of the answer. Null when not reviewed: `InsufficientInformation`, `needsCoverageLevel`, `Review:Enabled=false`, or claims created before the review feature. |
 
 `ClaimEvaluationResultDto`
 
@@ -173,6 +174,22 @@ Returns a stored claim, including a `Failed` one. Operation id `GetClaim`. Use i
 |----------|------|-------|
 | `sectionHeading` | string | Heading of the cited chunk's section. |
 | `excerpt` | string | From the stored chunk text, at most 500 characters. |
+
+`ClaimReviewDto`
+
+| Property | Type | Notes |
+|----------|------|-------|
+| `state` | string | `Completed` or `Failed`. |
+| `agreesWithPrimary` | boolean, nullable | Null when `state` is `Failed`. |
+| `isCovered` | boolean, nullable | The reviewer's own verdict. |
+| `confidence` | int32, nullable | 0 to 100. |
+| `accuracyExplanation` | string, nullable | Up to 2,000 characters. |
+| `coveredItems` | string[] | Up to 20 items, each up to 300 characters. |
+| `notCoveredItems` | string[] | Up to 20 items, each up to 300 characters. |
+| `model` | string, nullable | Review model, from `OpenRouter:ReviewModel`. |
+| `errorCode` | string, nullable | `review.failed` when `state` is `Failed`. |
+
+A failed review does not fail the claim. If the review call fails, times out or returns invalid output (after one retry), the claim is still returned with `201` and `state` `Evaluated`, and `review` is `{ state: "Failed", errorCode: "review.failed" }`. The primary result is unchanged.
 
 `ClaimState` is a string enum: `Evaluated`, `Failed`. `ClaimStatus` is a string enum: `Covered`, `NotCovered`, `Conditional`, `InsufficientInformation`.
 

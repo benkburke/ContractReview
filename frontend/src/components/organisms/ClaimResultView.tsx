@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -23,6 +23,7 @@ import { ClaimStatusBanner } from "@/components/atoms/ClaimStatusBanner";
 import { ConfidenceGauge } from "@/components/atoms/ConfidenceGauge";
 import { CitationsCard } from "@/components/molecules/CitationsCard";
 import { FieldError } from "@/components/molecules/FieldError";
+import { ClaimReviewPanel } from "@/components/molecules/ClaimReviewPanel";
 import { ItemsCard } from "@/components/molecules/ItemsCard";
 import { ResultCard } from "@/components/molecules/ResultCard";
 import { claimFieldIds, claimLimits } from "@/constants/claims";
@@ -47,6 +48,9 @@ export function ClaimResultView({ contractId, claimId }: Props) {
   const [reError, setReError] = useState<string | null>(null);
   const [answer, setAnswer] = useState("");
   const [answerError, setAnswerError] = useState<string | null>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const reviewSummaryRef = useRef<HTMLDivElement>(null);
+  const reviewPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let active = true;
@@ -126,6 +130,16 @@ export function ClaimResultView({ contractId, claimId }: Props) {
       ? claimStrings.followUpFallback
       : null);
 
+  const review = claim.review ?? null;
+  const reviewDisagrees =
+    review?.state === "Completed" && review.agreesWithPrimary === false;
+
+  function showReview() {
+    setReviewOpen(true);
+    reviewPanelRef.current?.scrollIntoView?.({ block: "start" });
+    reviewSummaryRef.current?.focus();
+  }
+
   async function reevaluate() {
     if (busy || !level) return;
     setBusy(true);
@@ -193,6 +207,25 @@ export function ClaimResultView({ contractId, claimId }: Props) {
       ) : (
         <>
           <ClaimStatusBanner status={result.status} />
+          {reviewDisagrees ? (
+            <Alert
+              severity="warning"
+              role="none"
+              data-testid={testIds.claimReviewDisagreeBanner}
+              action={
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={showReview}
+                  data-testid={testIds.claimReviewDisagreeAction}
+                >
+                  {claimStrings.review.disagreeAction}
+                </Button>
+              }
+            >
+              {claimStrings.review.disagreeBanner}
+            </Alert>
+          ) : null}
           <Box
             sx={{
               display: "flex",
@@ -229,6 +262,17 @@ export function ClaimResultView({ contractId, claimId }: Props) {
             testId={testIds.claimExcludedItems}
           />
           <CitationsCard citations={result.citations} />
+          <ClaimReviewPanel
+            review={review}
+            needsMoreInfo={
+              result.status === "InsufficientInformation" ||
+              result.needsCoverageLevel
+            }
+            expanded={reviewOpen}
+            onToggle={setReviewOpen}
+            summaryRef={reviewSummaryRef}
+            panelRef={reviewPanelRef}
+          />
           {followUpText ? (
             <Alert severity="info" data-testid={testIds.claimFollowUp}>
               <Typography component="p" sx={{ fontWeight: 600 }}>

@@ -9,7 +9,7 @@ Status: approved 2026-11-02 (D-024; revised for the warranty claim scope, specs/
 - [x] T4 Live evaluation progress: push evaluation steps (retrieving, reasoning, done/failed) to the asking user over SignalR.
 
 ## Depth
-- [ ] D1 Second-pass evaluator: agree/disagree with reasoning, own confidence and coverage breakdown, shown in a Debug/Evaluation panel (D-018).
+- [x] D1 Second-pass evaluator: agree/disagree with reasoning, own confidence and coverage breakdown, shown in a Debug/Evaluation panel (D-018).
 - [ ] D2 State amendments: state picker; retrieval includes that state's amendments (D-021).
 - [ ] D3 Claim history per contract: list and reopen past claims and results.
 - [ ] D4 Evaluation set: scripted sample claims with expected outcomes, run as a regression check.

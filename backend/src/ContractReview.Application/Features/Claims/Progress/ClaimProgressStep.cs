@@ -7,6 +7,7 @@ public enum ClaimProgressStep
 {
     Retrieving,
     Reasoning,
+    Reviewing,
     Completed,
     Failed,
 }
