@@ -47,12 +47,13 @@ public sealed class OpenRouterChatClient(
         for (var attempt = 0; ; attempt++)
         {
             var content = await SendAsync(request, settings, cancellationToken);
-            if (ChatWire.ParseAnswer(content) is { } answer)
+            if (ChatWire.ParseAnswer(content, out var failureReason) is { } answer)
             {
                 return answer;
             }
 
-            logger.LogWarning("OpenRouter chat returned malformed output (attempt {Attempt})", attempt + 1);
+            logger.LogWarning(
+                "OpenRouter chat returned malformed output (attempt {Attempt}): {Reason}", attempt + 1, failureReason);
             if (attempt >= ChatApi.MalformedOutputRetries)
             {
                 throw new ChatFailedException(ChatFailureReasons.MalformedOutput);

@@ -270,3 +270,11 @@ Recorded by the coordinator with `node scripts/decision.mjs`. Append-only: a cha
 - Why: Available locally for the demo check without committing it
 - Who: You chose
 - Source: specs/evaluate-claim.md
+
+## D-035 How should claim evaluation handle a model answer that sets needsCoverageLevel=true with no coverage level options?
+- Date: 2026-11-02
+- Options: Normalize to needsCoverageLevel=false, keep the answer, tighten the prompt, and log the violation reason | Keep rejecting and only add logging
+- Choice: Normalize to needsCoverageLevel=false, keep the answer, tighten the prompt, and log the violation reason
+- Why: The answer is otherwise valid; rejecting it fails every evaluation of contracts whose excerpts name no tiers, and the retry at temperature 0 repeats the same output
+- Who: Claude proposed; you accepted
+- Source: specs/fixes/2026-11-02-needs-level-without-options.md

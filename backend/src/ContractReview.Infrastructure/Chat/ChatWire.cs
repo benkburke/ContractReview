@@ -74,6 +74,9 @@ internal static class ChatWire
         RespectNullableAnnotations = true,
     };
 
+    /// <summary>Logged reason when the content is empty, not JSON, or does not have the schema's shape.</summary>
+    public const string ReasonNotJsonOfSchema = "content is not valid JSON of the schema";
+
     private const string KeyType = "type";
     private const string KeyAdditionalProperties = "additionalProperties";
     private const string KeyRequired = "required";
@@ -97,8 +100,9 @@ internal static class ChatWire
         new ChatResponseFormat(ChatApi.ResponseFormatJsonSchema, new ChatJsonSchema(ChatApi.SchemaName, true, AnswerSchema())));
 
     /// <summary>Parses the model's content into an answer; null when it is not valid JSON of the schema or breaks a limit.</summary>
-    public static LlmClaimAnswer? ParseAnswer(string? content)
+    public static LlmClaimAnswer? ParseAnswer(string? content, out string? failureReason)
     {
+        failureReason = ReasonNotJsonOfSchema;
         if (string.IsNullOrWhiteSpace(content))
         {
             return null;
@@ -114,23 +118,32 @@ internal static class ChatWire
             return null;
         }
 
-        if (wire is null || !Enum.GetNames<ClaimStatus>().Contains(wire.Status))
+        if (wire is null)
         {
             return null;
         }
 
+        if (!Enum.GetNames<ClaimStatus>().Contains(wire.Status))
+        {
+            failureReason = LlmClaimAnswer.ViolationStatus;
+            return null;
+        }
+
+        // A level request without tiers cannot be offered to the user; keep the status and follow-up as returned.
+        var needsLevel = wire.NeedsCoverageLevel && wire.CoverageLevelOptions.Count > 0;
         var answer = new LlmClaimAnswer(
             Enum.Parse<ClaimStatus>(wire.Status),
             wire.Confidence,
             wire.CoverageLevel,
-            wire.NeedsCoverageLevel,
+            needsLevel,
             wire.CoverageLevelOptions,
             wire.CoveredItems,
             wire.ExcludedItems,
             wire.Reasoning,
             wire.FollowUpQuestion,
             wire.Citations);
-        return answer.FindViolation() is null ? answer : null;
+        failureReason = answer.FindViolation();
+        return failureReason is null ? answer : null;
     }
 
     /// <summary>The strict JSON schema of <see cref="ChatAnswerWire"/>; limits are enforced server-side after parsing.</summary>
