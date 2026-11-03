@@ -26,7 +26,10 @@
 #
 #   Web app settings (configured in Azure, not here):
 #     both:     SCM Basic Auth Publishing Credentials = On (required by publish profiles)
-#     backend:  ConnectionStrings__AppDb, ASPNETCORE_ENVIRONMENT=Production, CORS origin for the frontend URL
+#     backend:  ConnectionStrings__AppDb, ASPNETCORE_ENVIRONMENT=Production, CORS origin for the frontend URL,
+#               OpenRouter__ApiKey (required: contract indexing and claim evaluation fail with 502 without it).
+#               Optional overrides: OpenRouter__EmbeddingModel, OpenRouter__ChatModel. Never set
+#               Embeddings__Provider or Llm__Provider to Fake in production.
 #     frontend: SCM_DO_BUILD_DURING_DEPLOYMENT=false, Startup Command "node server.js"
 #               (publish-profile deploys cannot set the startup command)
 

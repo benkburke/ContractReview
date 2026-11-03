@@ -177,6 +177,29 @@ The production API enables Swagger through the App Service setting `Swagger__Ena
 
 This is an explicit production opt-in: the project has no authentication, so the documentation and Swagger's interactive API calls are publicly accessible. The published configuration remains disabled by default.
 
+### Upload succeeds but embedding indexing fails
+
+Set `OpenRouter__ApiKey` on the **API** App Service, not the frontend. After saving, allow the API to restart so the embedding client loads the new setting. A missing key does not prevent the API from starting; indexing fails and the upload remains stored.
+
+With the default `Indexing:BackfillOnStartup=true`, startup retries contracts that are not indexed, failed, or were interrupted while indexing. Refresh the contract after recovery; do not upload it again just to retry indexing. If it still fails, inspect API logs for the missing-key warning or the embedding provider's HTTP status without sharing the key or contract content.
+
+### API app settings
+
+Set these on the **API** App Service (`contractreview-api`) under **Settings > Environment variables**. Never commit their values or put them in `appsettings.json`.
+
+| Setting | Required | Value |
+| --- | --- | --- |
+| `ConnectionStrings__AppDb` | Yes | SQL connection string for the application database. |
+| `ASPNETCORE_ENVIRONMENT` | Yes | `Production` |
+| `Cors__FrontendOrigin` | Yes | Frontend origin, such as `https://<frontend-default-domain>`, without a trailing slash. The default in `appsettings.json` is `http://localhost:3000`. |
+| `OpenRouter__ApiKey` | Yes | OpenRouter API key. Without it, uploads fail with "The embedding service could not index this contract" (502 `contract.embedding_failed`), and claims fail with 502 `claim.evaluation_failed`. |
+| `OpenRouter__EmbeddingModel` | No | Defaults to `openai/text-embedding-3-small`. |
+| `OpenRouter__ChatModel` | No | Defaults to `openai/gpt-4o-mini`. |
+
+Never set `Embeddings__Provider` or `Llm__Provider` to `Fake` in production. `Fake` selects the deterministic test clients (D-028).
+
+If an upload or claim returns 502, the reason is only in the server log. Open Azure Portal > `contractreview-api` > **Monitoring > Log stream**. The message "The embedding API key is not configured." means `OpenRouter__ApiKey` is missing.
+
 ## Notes
 
 - There is no authentication (decision D-003). Anyone who can reach the API can call it.
