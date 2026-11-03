@@ -202,6 +202,13 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "X-SignalR-Connection-Id",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {

@@ -72,6 +72,8 @@ Evaluates a claim against the contract. Operation id `EvaluateClaim`.
 |-----------|----|------|----------|
 | `id` | path | uuid | yes |
 
+Optional header `X-SignalR-Connection-Id` receives live progress events on the claim-progress hub (see [Realtime](realtime.md)). Without it, no progress is sent.
+
 Request body: `EvaluateClaimRequest` (`application/json`).
 
 | Field | Type | Rules |

@@ -1,6 +1,7 @@
 import { apiClient } from "@/api/client";
 import { mapClaimProblem, readProblem, type ProblemInfo } from "@/api/problem";
 import { claimLimits } from "@/constants/claims";
+import { hubHeaders } from "@/constants/realtime";
 import { contractErrorStrings } from "@/strings/contracts";
 
 export type EvaluateOutcome =
@@ -25,17 +26,23 @@ export function composeFollowUpClaim(
   return claimText.slice(0, room) + composeBlockSeparator + tail;
 }
 
-/** Single place that posts a claim; used by the ask form and "Evaluate again". */
+/** Single place that posts a claim; used by the ask form and "Evaluate again". The connection id is sent only when the progress hub is connected. */
 export async function evaluateClaim(
   contractId: string,
   claimText: string,
   coverageLevel: string | null,
+  progressConnectionId: string | null = null,
 ): Promise<EvaluateOutcome> {
   try {
     const { data, error, response } = await apiClient.POST(
       "/api/contracts/{id}/claims",
       {
-        params: { path: { id: contractId } },
+        params: {
+          path: { id: contractId },
+          header: progressConnectionId
+            ? { [hubHeaders.connectionId]: progressConnectionId }
+            : undefined,
+        },
         body: { claimText, coverageLevel },
       },
     );

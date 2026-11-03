@@ -335,7 +335,9 @@ export interface operations {
     EvaluateClaim: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-SignalR-Connection-Id"?: string;
+            };
             path: {
                 id: string;
             };

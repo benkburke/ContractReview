@@ -57,3 +57,15 @@ export const claimErrorStrings = {
   load: "Could not load the claim.",
   failedByCode: "The evaluation failed. Please ask the claim again.",
 } as const;
+
+export const claimProgressStrings = {
+  listLabel: "Evaluation progress",
+  retrieving: "Retrieving relevant clauses",
+  reasoning: "Evaluating against the contract",
+  done: "Done",
+  failed: "Failed",
+  stateDone: "Completed",
+  stateCurrent: "In progress",
+  statePending: "Waiting",
+  stateFailed: "Did not complete",
+} as const;

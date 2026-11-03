@@ -120,11 +120,13 @@ public static class ContractEndpoints
     private static async Task<Results<CreatedAtRoute<ClaimEvaluationDto>, ProblemHttpResult>> EvaluateClaimAsync(
         Guid id,
         EvaluateClaimRequest request,
+        [FromHeader(Name = HeaderNames.SignalRConnectionId)] string? connectionId,
         ICommandHandler<EvaluateClaimCommand, ClaimEvaluationDto?> handler,
         CancellationToken cancellationToken)
     {
         var result = await handler.HandleAsync(
-            new EvaluateClaimCommand(id, request.ClaimText, request.CoverageLevel),
+            new EvaluateClaimCommand(id, request.ClaimText, request.CoverageLevel,
+                connectionId is { Length: > 0 and <= HeaderNames.MaxConnectionIdLength } ? connectionId : null),
             cancellationToken);
         if (result is not null)
         {

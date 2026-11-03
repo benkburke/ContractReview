@@ -38,6 +38,8 @@ export const testIds = {
   claimFormError: "claim-form-error",
   claimSubmit: "claim-submit",
   claimWaitNote: "claim-wait-note",
+  claimProgress: "claim-progress",
+  claimProgressStep: "claim-progress-step",
   claimNotIndexed: "claim-not-indexed",
   claimLoading: "claim-loading",
   claimNotFound: "claim-not-found",

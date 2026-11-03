@@ -60,3 +60,64 @@ test("asking a claim on an indexed contract opens the results dashboard", async 
   const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
   expect(serious.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
 });
+
+test("submitting a claim shows live progress, then opens the result", async ({ page }) => {
+  await page.goto(routes.contracts);
+  await page.getByTestId(testIds.uploadTitleInput).fill(`Progress contract ${Date.now()}`);
+  await page.getByTestId(testIds.uploadFileInput).setInputFiles({
+    name: "warranty.pdf",
+    mimeType: "application/pdf",
+    buffer: buildPdf(LINES),
+  });
+  await page.getByTestId(testIds.uploadSubmit).click();
+  await expect(page).toHaveURL(/\/contracts\/[0-9a-f-]{36}$/);
+
+  // Hold the response after the server has handled the request so the pushed steps stay on screen.
+  let release: () => void = () => {};
+  const released = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(/\/api\/contracts\/[0-9a-f-]{36}\/claims$/, async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    const response = await route.fetch();
+    await released;
+    return route.fulfill({ response });
+  });
+
+  await page.getByTestId(testIds.claimTextInput).fill(CLAIM);
+  await page.getByTestId(testIds.claimSubmit).click();
+
+  const progress = page.getByTestId(testIds.claimProgress);
+  await expect(progress).toBeVisible();
+  await expect(page.getByTestId(testIds.claimProgressStep)).toHaveCount(3);
+
+  release();
+  await expect(page).toHaveURL(/\/contracts\/[0-9a-f-]{36}\/claims\/[0-9a-f-]{36}$/);
+  await expect(page.getByTestId(testIds.claimStatusBanner)).toContainText(claimStrings.status.Covered);
+});
+
+test("the claim form is accessible while progress is shown", async ({ page }) => {
+  await page.goto(routes.contracts);
+  await page.getByTestId(testIds.uploadTitleInput).fill(`Busy contract ${Date.now()}`);
+  await page.getByTestId(testIds.uploadFileInput).setInputFiles({
+    name: "warranty.pdf",
+    mimeType: "application/pdf",
+    buffer: buildPdf(LINES),
+  });
+  await page.getByTestId(testIds.uploadSubmit).click();
+  await expect(page).toHaveURL(/\/contracts\/[0-9a-f-]{36}$/);
+
+  await page.route(/\/api\/contracts\/[0-9a-f-]{36}\/claims$/, async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    const response = await route.fetch();
+    await new Promise(() => {});
+    return route.fulfill({ response });
+  });
+  await page.getByTestId(testIds.claimTextInput).fill(CLAIM);
+  await page.getByTestId(testIds.claimSubmit).click();
+  await expect(page.getByTestId(testIds.claimProgress)).toBeVisible();
+
+  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
+  const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+  expect(serious.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
+});

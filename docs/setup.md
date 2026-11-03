@@ -150,6 +150,12 @@ npm run gen:api
 
 `.github/workflows/azure-deploy.yml` lists the required `production` environment secrets and variables. Its migration job uses OIDC to authenticate a managed identity, opens a temporary SQL firewall rule, runs the migration bundle, and removes the rule. Publish profiles authenticate the later app deployments; they do not grant the migration identity Azure access.
 
+### API app settings for the frontend and realtime progress
+
+- On the API app, set **Configuration > General settings > Web sockets** to On. Without it, SignalR falls back to long polling.
+- If the API is scaled to more than one instance, keep **ARR affinity** on.
+- `Cors__FrontendOrigin` must be the exact frontend origin (for example `https://<frontend-host>`), not `*`. The CORS policy allows credentials for this origin.
+
 ### Azure login reports "No subscriptions found"
 
 This error occurs during Azure CLI subscription discovery, before any firewall change or EF Core migration. Supplying `AZURE_SUBSCRIPTION_ID` does not grant access to that subscription.

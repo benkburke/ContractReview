@@ -8,10 +8,13 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import { evaluateClaim } from "@/api/claims";
+import { ClaimProgressSteps } from "@/components/molecules/ClaimProgressSteps";
 import { FieldError } from "@/components/molecules/FieldError";
 import { claimFieldIds, claimLimits } from "@/constants/claims";
 import { routes } from "@/constants/routes";
 import { testIds } from "@/constants/testIds";
+import { claimProgressSteps } from "@/realtime/contracts";
+import { useClaimProgress } from "@/realtime/useClaimProgress";
 import { claimErrorStrings, claimStrings } from "@/strings/claims";
 
 type Errors = {
@@ -21,12 +24,18 @@ type Errors = {
 };
 const noErrors: Errors = { text: null, coverage: null, form: null };
 
+// MUI dims disabled helper text to text.disabled (2.67:1 on white); keep it at text.secondary (WCAG AA 4.5:1).
+const disabledHelperSx = {
+  "&.Mui-disabled": { color: "text.secondary" },
+} as const;
+
 export function AskClaimForm({ contractId }: { contractId: string }) {
   const router = useRouter();
   const [text, setText] = useState("");
   const [coverage, setCoverage] = useState("");
   const [errors, setErrors] = useState<Errors>(noErrors);
   const [busy, setBusy] = useState(false);
+  const progress = useClaimProgress(contractId);
 
   async function onSubmit(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -49,12 +58,15 @@ export function AskClaimForm({ contractId }: { contractId: string }) {
     if (next.text || next.coverage) return;
 
     setBusy(true);
+    progress.reset();
     const outcome = await evaluateClaim(
       contractId,
       trimmed,
       level === "" ? null : level,
+      progress.getConnectionId(),
     );
     if (outcome.ok) {
+      progress.reset();
       router.push(routes.claimDetail(contractId, outcome.claimId));
       setBusy(false);
       setText("");
@@ -65,6 +77,10 @@ export function AskClaimForm({ contractId }: { contractId: string }) {
     setErrors({ ...noErrors, [outcome.field]: outcome.message });
     setBusy(false);
   }
+
+  // After a failure the step list stays so the Failed step remains visible next to the error.
+  const showFailedSteps =
+    progress.seen[progress.seen.length - 1] === claimProgressSteps.failed;
 
   const textDescribedBy = [
     claimFieldIds.textHelp,
@@ -108,7 +124,10 @@ export function AskClaimForm({ contractId }: { contractId: string }) {
             "aria-describedby": textDescribedBy,
             "data-testid": testIds.claimTextInput,
           },
-          formHelperText: { id: claimFieldIds.textHelp },
+          formHelperText: {
+            id: claimFieldIds.textHelp,
+            sx: disabledHelperSx,
+          },
         }}
       />
       <FieldError
@@ -129,7 +148,10 @@ export function AskClaimForm({ contractId }: { contractId: string }) {
             "aria-describedby": coverageDescribedBy,
             "data-testid": testIds.claimCoverageInput,
           },
-          formHelperText: { id: claimFieldIds.coverageHelp },
+          formHelperText: {
+            id: claimFieldIds.coverageHelp,
+            sx: disabledHelperSx,
+          },
         }}
       />
       <FieldError
@@ -157,11 +179,16 @@ export function AskClaimForm({ contractId }: { contractId: string }) {
       >
         {busy ? claimStrings.evaluating : claimStrings.evaluate}
       </Button>
-      <div role="status" data-testid={testIds.claimWaitNote}>
+      <div role="status" aria-live="polite" data-testid={testIds.claimWaitNote}>
         {busy ? (
           <Typography color="text.secondary">
             {claimStrings.waitNote}
           </Typography>
+        ) : null}
+        {busy || showFailedSteps ? (
+          <div data-testid={testIds.claimProgress}>
+            <ClaimProgressSteps seen={progress.seen} />
+          </div>
         ) : null}
       </div>
     </Box>

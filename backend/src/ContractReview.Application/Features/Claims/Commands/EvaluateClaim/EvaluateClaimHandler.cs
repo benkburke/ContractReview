@@ -2,6 +2,7 @@ using ContractReview.Application.Abstractions.Chat;
 using ContractReview.Application.Abstractions.Embeddings;
 using ContractReview.Application.Abstractions.Messaging;
 using ContractReview.Application.Abstractions.Persistence;
+using ContractReview.Application.Features.Claims.Progress;
 using ContractReview.Application.Features.Claims.Retrieval;
 using ContractReview.Application.Options;
 using ContractReview.Domain.Claims;
@@ -26,6 +27,7 @@ public sealed class EvaluateClaimHandler(
     IClaimRetriever retriever,
     IChatCompletionClient chat,
     IOptions<ClaimsOptions> options,
+    IClaimProgressNotifier notifier,
     TimeProvider clock,
     ILogger<EvaluateClaimHandler> logger) : ICommandHandler<EvaluateClaimCommand, ClaimEvaluationDto?>
 {
@@ -61,7 +63,7 @@ public sealed class EvaluateClaimHandler(
 
         try
         {
-            claim.Complete(await EvaluateAsync(claim, cancellationToken), UtcNow());
+            claim.Complete(await EvaluateAsync(claim, command.ProgressConnectionId, cancellationToken), UtcNow());
         }
         catch (Exception ex) when (ex is EmbeddingFailedException or ChatFailedException or ClaimEvaluationFailedException or DomainException)
         {
@@ -69,6 +71,7 @@ public sealed class EvaluateClaimHandler(
             claim.Fail(ErrorCodes.ClaimEvaluationFailed, UtcNow());
             db.Claims.Add(claim);
             await db.SaveChangesAsync(CancellationToken.None);
+            await PushAsync(command.ProgressConnectionId, claim, ClaimProgressStep.Failed, ErrorCodes.ClaimEvaluationFailed);
             throw new ClaimEvaluationFailedException(ex);
         }
 
@@ -76,12 +79,15 @@ public sealed class EvaluateClaimHandler(
         await db.SaveChangesAsync(cancellationToken);
         logger.LogInformation(
             "Evaluated claim {ClaimId} for contract {ContractId}: {Status}", claim.Id, claim.ContractId, claim.Status);
+        await PushAsync(command.ProgressConnectionId, claim, ClaimProgressStep.Completed);
         return ClaimMapping.ToDto(claim);
     }
 
-    private async Task<ClaimEvaluationResult> EvaluateAsync(Claim claim, CancellationToken cancellationToken)
+    private async Task<ClaimEvaluationResult> EvaluateAsync(
+        Claim claim, string? connectionId, CancellationToken cancellationToken)
     {
         var settings = options.Value;
+        await PushAsync(connectionId, claim, ClaimProgressStep.Retrieving);
         var queryText = claim.CoverageLevelRequested is null
             ? claim.ClaimText
             : claim.ClaimText + ClaimTextSeparator + claim.CoverageLevelRequested;
@@ -107,6 +113,7 @@ public sealed class EvaluateClaimHandler(
             claim.ClaimText,
             claim.CoverageLevelRequested,
             retrieved.Select(r => new PromptChunk(r.Label, r.SectionHeading, r.Text)).ToList());
+        await PushAsync(connectionId, claim, ClaimProgressStep.Reasoning);
         var answer = await chat.EvaluateAsync(prompt, cancellationToken);
         if (answer.FindViolation() is not null)
         {
@@ -147,6 +154,16 @@ public sealed class EvaluateClaimHandler(
 
         return citations;
     }
+
+    private Task PushAsync(string? connectionId, Claim claim, ClaimProgressStep step, string? errorCode = null) =>
+        notifier.NotifyAsync(
+            connectionId,
+            new ClaimProgressEvent(
+                claim.ContractId,
+                step,
+                UtcNow(),
+                step is ClaimProgressStep.Completed or ClaimProgressStep.Failed ? claim.Id : null,
+                errorCode));
 
     private DateTime UtcNow() => clock.GetUtcNow().UtcDateTime;
 }

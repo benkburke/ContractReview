@@ -1,11 +1,13 @@
 using ContractReview.Api.Cors;
 using ContractReview.Api.Endpoints;
+using ContractReview.Api.Hubs;
 using ContractReview.Api.ExceptionHandling;
 using ContractReview.Api.OpenApi;
 using ContractReview.Api.Options;
 using ContractReview.Api.Routes;
 using ContractReview.Api.Http;
 using ContractReview.Application;
+using ContractReview.Application.Features.Claims.Progress;
 using ContractReview.Application.Options;
 using ContractReview.Domain.Errors;
 using ContractReview.Infrastructure;
@@ -38,6 +40,7 @@ builder.Services.AddOptions<ClaimsOptions>()
     .ValidateOnStart();
 
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<IClaimProgressNotifier, SignalRClaimProgressNotifier>();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddValidation();
@@ -55,6 +58,8 @@ builder.Services.AddExceptionHandler<EmbeddingFailedExceptionHandler>();
 builder.Services.AddExceptionHandler<ClaimEvaluationFailedExceptionHandler>();
 builder.Services.AddExceptionHandler<BadRequestExceptionHandler>();
 builder.Services.AddHealthChecks();
+builder.Services.AddSignalR().AddJsonProtocol(o =>
+    o.PayloadSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
 builder.Services.AddOpenApi(ApiInfo.DocumentName, options =>
     options.AddDocumentTransformer((document, _, _) =>
     {
@@ -69,7 +74,7 @@ var frontendOrigin = builder.Configuration
     .GetSection(FrontendCorsOptions.SectionName)
     .Get<FrontendCorsOptions>()?.FrontendOrigin ?? FrontendCorsOptions.DefaultFrontendOrigin;
 builder.Services.AddCors(options => options.AddPolicy(CorsPolicies.Frontend, policy =>
-    policy.WithOrigins(frontendOrigin).AllowAnyHeader().AllowAnyMethod()));
+    policy.WithOrigins(frontendOrigin).AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
 
 var app = builder.Build();
 
@@ -89,6 +94,7 @@ if (app.Configuration.GetSection(SwaggerOptions.SectionName).Get<SwaggerOptions>
 
 app.MapHealthChecks(ApiRoutes.Health);
 app.MapContractEndpoints();
+app.MapHub<ClaimProgressHub>(ApiRoutes.ClaimProgressHub).RequireCors(CorsPolicies.Frontend);
 
 app.Run();
 
