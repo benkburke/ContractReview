@@ -159,7 +159,10 @@ npm run gen:api
 
 - On the API app, set **Configuration > General settings > Web sockets** to On. Without it, SignalR falls back to long polling.
 - If the API is scaled to more than one instance, keep **ARR affinity** on.
-- `Cors__FrontendOrigin` must be the exact frontend origin (for example `https://<frontend-host>`), not `*`. The CORS policy allows credentials for this origin.
+- CORS is handled by one of two places, never both:
+  - **Platform CORS** (API app > **CORS**): if any origins are listed here, App Service handles CORS and `Cors__FrontendOrigin` is ignored. List the exact frontend origin (for example `https://<frontend-host>`), not `*`, and tick **Enable Access-Control-Allow-Credentials**. Without it, the SignalR hub connection is rejected silently: claims still evaluate, but no progress steps appear. This is the production setup today (platform CORS with credentials enabled, Web sockets On).
+  - **App CORS**: remove all platform CORS origins so the app's policy applies. Then `Cors__FrontendOrigin` must be the exact frontend origin. The app's policy allows credentials for this origin.
+- Quick check (replace the placeholders): `curl -i -X POST <api>/hubs/claim-progress/negotiate?negotiateVersion=1 -H "Origin: <frontend>" -H "Content-Length: 0"` should return `access-control-allow-credentials: true`.
 
 ### Azure login reports "No subscriptions found"
 
@@ -202,7 +205,7 @@ Set these on the **API** App Service (`contractreview-api`) under **Settings > E
 | --- | --- | --- |
 | `ConnectionStrings__AppDb` | Yes | SQL connection string for the application database. |
 | `ASPNETCORE_ENVIRONMENT` | Yes | `Production` |
-| `Cors__FrontendOrigin` | Yes | Frontend origin, such as `https://<frontend-default-domain>`, without a trailing slash. The default in `appsettings.json` is `http://localhost:3000`. |
+| `Cors__FrontendOrigin` | Yes | Frontend origin, such as `https://<frontend-default-domain>`, without a trailing slash. The default in `appsettings.json` is `http://localhost:3000`. Ignored when platform CORS origins are configured (see [API app settings](#api-app-settings-for-the-frontend-and-realtime-progress)). |
 | `OpenRouter__ApiKey` | Yes | OpenRouter API key. Without it, uploads fail with "The embedding service could not index this contract" (502 `contract.embedding_failed`), and claims fail with 502 `claim.evaluation_failed`. |
 | `OpenRouter__EmbeddingModel` | No | Defaults to `openai/text-embedding-3-small`. |
 | `OpenRouter__ChatModel` | No | Defaults to `openai/gpt-4o-mini`. |

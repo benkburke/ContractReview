@@ -59,7 +59,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["ListClaims"];
         put?: never;
         post: operations["EvaluateClaim"];
         delete?: never;
@@ -120,6 +120,15 @@ export interface components {
             citations: components["schemas"]["ClaimCitationDto"][];
             model: string;
         };
+        ClaimHistoryPageDto: {
+            items: components["schemas"]["ClaimSummaryDto"][];
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalCount: number | string;
+        };
         ClaimReviewDto: {
             state: components["schemas"]["ClaimReviewState"];
             agreesWithPrimary: null | boolean;
@@ -138,6 +147,18 @@ export interface components {
         ClaimState: "Evaluated" | "Failed";
         /** @enum {unknown} */
         ClaimStatus: "Covered" | "NotCovered" | "Conditional" | "InsufficientInformation";
+        ClaimSummaryDto: {
+            /** Format: uuid */
+            id: string;
+            claimText: string;
+            state: components["schemas"]["ClaimState"];
+            status: null | components["schemas"]["ClaimStatus"];
+            /** Format: int32 */
+            confidence: null | number | string;
+            reviewAgrees: null | boolean;
+            /** Format: date-time */
+            createdAtUtc: string;
+        };
         ContractDetailDto: {
             /** Format: uuid */
             id: string;
@@ -338,6 +359,49 @@ export interface operations {
             };
             /** @description Bad Gateway */
             502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ListClaims: {
+        parameters: {
+            query?: {
+                page?: number | string;
+                pageSize?: number | string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimHistoryPageDto"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
